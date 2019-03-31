@@ -1,0 +1,24 @@
+{
+  "appName": "SSO_TEMPLATE",
+  "bluemail": {
+    "serviceName": "bluemail",
+    "username": "your-bluemail-user-name",
+    "password": "your-bluemail-password",
+    "emailUrl": "email-URL-provided-by-bluemail"
+},
+  "sessionSecret": "some random text string that will baffle others ability to hack your stuff",
+  "partnerID": "{copied from w3ID completion page}", 
+  "IDP_login_url": "{copied from w3ID completion page}", 
+  "assert_url": "{copied from w3ID completion page}", 
+  "baseApp_url": "{copied from w3ID completion page}", 
+  "cert_folder": "cert",
+  "cert_file": "w3id.staging.sso.ibm.com",
+"requiredFolders":
+    [
+      {"path": "HTML/temp", "comment": "temp path"},
+      {"path": "HTML/backups", "comment": "backup path"},
+      {"path": "HTML/movies",  "comment": "movie path"}
+    ],
+  "test_certificate": "cert/w3id.staging.sso.ibm.com",
+  "production_certificate": ""
+}
