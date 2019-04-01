@@ -65,32 +65,38 @@ let RDDnoSQL = {
     let params = 'name=' + this.cloudantCredentials.username + '&password=' + this.cloudantCredentials.password;
     let method = 'POST';
     let url = this.getDBPath() + '/_session';
-    request(
-      {url: url, method: method, headers: {'content-type': 'application/x-www-form-urlencoded'}, form: params},
-      function(error, response, body) {
-        if (error) {
-          return ({error: error});
-        } else {
-          this.cloudantAuth = response.headers['set-cookie'];
-          return ({success: response});
+    let _rdd = this;
+    return new Promise(function(resolve, reject) {
+      request(
+        {url: url, method: method, headers: {'content-type': 'application/x-www-form-urlencoded'}, form: params},
+        function(error, response, body) {
+          if (error) {
+            reject({error: error});
+          } else {
+            _rdd.cloudantAuth = response.headers['set-cookie'];
+            resolve({success: response});
+          }
         }
-      }
-    );
+      );
+    });
   },
 
   create: function(_name) {
     // create a new database
     let method = 'PUT';
     let url = this.getDBPath() + _name;
-    request({
-      url: url,
-      headers: {'set-cookie': this.cloudantAuth, Accept: '/'},
-      method: method
-    }, function(error, response, body) {
-      let _body = JSON.parse(body);
-      if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-        if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { return ({error: _body.error}); } else { return ({error: error}); }
-      } else { return ({success: _body}); }
+    let _rdd = this;
+    return new Promise(function(resolve, reject) {
+      request({
+        url: url,
+        headers: {'set-cookie': _rdd.cloudantAuth, Accept: '/'},
+        method: method
+      }, function(error, response, body) {
+        let _body = JSON.parse(body);
+        if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
+          if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error}); } else { reject({error: error}); }
+        } else { resolve({success: _body}); }
+      });
     });
   },
 
@@ -98,15 +104,17 @@ let RDDnoSQL = {
     // drop a database
     let method = 'DELETE';
     let url = this.getDBPath() + _name;
-    request(
-      {url: url, method: method},
-      function(error, response, body) {
-        let _body = JSON.parse(body);
-        if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-          if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { return ({error: _body.error}); } else { return ({error: error}); }
-        } else { return ({success: _body}); }
-      }
-    );
+    return new Promise(function(resolve, reject) {
+      request(
+        {url: url, method: method},
+        function(error, response, body) {
+          let _body = JSON.parse(body);
+          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
+            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error}); } else { reject({error: error}); }
+          } else { resolve({success: _body}); }
+        }
+      );
+    });
   },
 
   insert: function(_name, _object) {
@@ -116,49 +124,34 @@ let RDDnoSQL = {
     let method = 'POST';
     let url = this.getDBPath() + _name;
     delete _object._rev;
-    request(
-      {url: url, json: _object, method: method},
-      function(error, response, body) {
-        let _body = JSON.parse(body);
-        if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-          if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { return ({error: _body.error}); } else { return ({error: error}); }
-        } else { return ({success: _body}); }
-      }
-    );
+    return new Promise(function(resolve, reject) {
+      request(
+        {url: url, json: _object, method: method},
+        function(error, response, body) {
+          if ((error) || ((typeof (body.error) !== 'undefined') && (body.error !== null))) {
+            if ((typeof (body.error) !== 'undefined') && (body.error !== null)) { reject({error: body.error}); } else { reject({error: error}); }
+          } else { resolve({success: body}); }
+        }
+      );
+    });
   },
 
-  update: function(req, res, next) {
-    // insert JSON _object into database _name
-    // let methodName = 'update';
-    let updateContent = req.body.content;
-    let _name = req.body.name;
-    let method = 'POST';
-    let object = {}; object.name = req.body.name; object.oid = req.body.oid;
-    let url = this.getDBPath() + '/db/getOne';
-    request(
-      {url: url, json: object, method: method},
-      function(error, response, body) {
-        if (error) { return ({error: error}); } else {
-          let orig = JSON.parse(body.success);
-          for (let prop in updateContent) {
-            (function(_idx, _array) {
-              orig[_idx] = _array[_idx];
-            })(prop, updateContent);
-          }
-          method = 'PUT';
-          url = this.getDBPath() + _name + '/' + object.oid;
-          request(
-            {url: url, json: orig, method: method},
-            function(error2, response2, body2) {
-              let _body = JSON.parse(body2);
-              if ((error2) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-                if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { return ({error: _body.error}); } else { return ({error: error2}); }
-              } else { return ({success: _body}); }
-            }
-          );
+  deleteItem: function(_name, _oid, _rev) {
+    // delete object specified by _oid in database _name /$DATABASE/$DOCUMENT_ID?rev=$REV
+    //_name, _oid, _rev, cbfn
+    let method = 'DELETE';
+    let url = this.getDBPath() + _name + '/' + _oid + '?rev=' + _rev;
+    return new Promise(function(resolve, reject) {
+      request(
+        {url: url, method: method},
+        function(error, response, body) {
+          let _body = JSON.parse(body);
+          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
+            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error}); } else { reject({error: error}); }
+          } else { resolve({success: _body}); }
         }
-      }
-    );
+      );
+    });
   },
 
   getOne: function(_name, _oid) {
@@ -166,15 +159,51 @@ let RDDnoSQL = {
     // select objects from database _name specified by selection criteria _selector
     let method = 'GET';
     let url = this.getDBPath() + _name + '/' + _oid;
-    request(
-      {url: url, method: method},
-      function(error, response, body) {
-        let _body = JSON.parse(body);
-        if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-          if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { return ({error: _body.error}); } else { return ({error: error}); }
-        } else { return ({success: _body}); }
-      }
-    );
+    return new Promise(function(resolve, reject) {
+      request(
+        {url: url, method: method},
+        function(error, response, body) {
+          let _body = JSON.parse(body);
+          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
+            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error}); } else { reject({error: error}); }
+          } else { resolve({success: _body}); }
+        }
+      );
+    });
+  },
+
+  update: function(_name, _id, _content) {
+    // insert JSON _object into database _name
+    let methodName = 'update';
+    let updateContent = _content;
+    let method = 'POST';
+    let _rdd = this;
+    return new Promise(function(resolve, reject) {
+      return _rdd.getOne(_name, _id)
+        .then(_currRec => {
+          let orig = _currRec.success;
+          for (let prop in updateContent) {
+            (function(_idx, _array) {
+              orig[_idx] = _array[_idx];
+            })(prop, updateContent);
+          }
+          method = 'PUT';
+          let url = _rdd.getDBPath() + _name + '/' + _id;
+          request(
+            {url: url, json: orig, method: method},
+            function(error2, response2, body2) {
+              let _body = body2;
+              if ((error2) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
+                if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error}); } else { reject({error: error2}); }
+              } else { resolve({success: _body}); }
+            }
+          );
+        })
+        .catch(error => {
+          console.log(methodName + ' error on getOne: ', error);
+          reject({error: error});
+        });
+    });
   },
 
   select: function(_name, key, view) {
@@ -243,22 +272,6 @@ let RDDnoSQL = {
     let url = this.getDBPath() + _name + keySelect;
     request(
       {url: url, method: method, json: object, headers: {'Content-Type': 'application/json'}},
-      function(error, response, body) {
-        let _body = JSON.parse(body);
-        if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-          if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { return ({error: _body.error}); } else { return ({error: error}); }
-        } else { return ({success: _body}); }
-      }
-    );
-  },
-
-  deleteItem: function(_name, _oid, _rev) {
-    // delete object specified by _oid in database _name /$DATABASE/$DOCUMENT_ID?rev=$REV
-    //_name, _oid, _rev, cbfn
-    let method = 'DELETE';
-    let url = this.getDBPath() + _name + '/' + _oid + '?rev=' + _rev;
-    request(
-      {url: url, method: method},
       function(error, response, body) {
         let _body = JSON.parse(body);
         if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
@@ -445,3 +458,7 @@ exports.restoreTable = RDDnoSQL.restoreTable;
 exports.getBackups = RDDnoSQL.getBackups;
 exports.getCredsFromFile = RDDnoSQL.getCredsFromFile;
 exports.getCredsFromJSON = RDDnoSQL.getCredsFromJSON;
+exports.setCreds = RDDnoSQL.setCreds;
+exports.cloudantAuth = RDDnoSQL.cloudantAuth;
+exports.noSQLCreds = RDDnoSQL.noSQLCreds;
+exports.cloudantCredentials = RDDnoSQL.cloudantCredentials;
