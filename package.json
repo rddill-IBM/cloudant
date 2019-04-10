@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index",
-    "test": "mocha"
+    "test": "nyc --reporter=html mocha"
   },
   "repository": {
     "type": "git",
@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "mocha": "^6.0.2"
+    "mocha": "^6.0.2",
+    "nyc": "^13.3.0"
   }
 }

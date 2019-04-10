@@ -3,6 +3,8 @@
     "browser": true,
     "es6": true,
     "jquery": true,
+    "mocha": true,
+    "chai": true,
     "node": true
   },
   "globals": {
