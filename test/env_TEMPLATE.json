@@ -13,12 +13,7 @@
   "baseApp_url": "{copied from w3ID completion page}", 
   "cert_folder": "cert",
   "cert_file": "w3id.staging.sso.ibm.com",
-"requiredFolders":
-    [
-      {"path": "HTML/temp", "comment": "temp path"},
-      {"path": "HTML/backups", "comment": "backup path"},
-      {"path": "HTML/movies",  "comment": "movie path"}
-    ],
   "test_certificate": "cert/w3id.staging.sso.ibm.com",
-  "production_certificate": ""
+  "production_certificate": "",
+  "useCouchDB": true
 }
