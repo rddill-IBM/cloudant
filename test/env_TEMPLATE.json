@@ -1,19 +1,17 @@
 {
-  "appName": "SSO_TEMPLATE",
-  "bluemail": {
-    "serviceName": "bluemail",
-    "username": "your-bluemail-user-name",
-    "password": "your-bluemail-password",
-    "emailUrl": "email-URL-provided-by-bluemail"
-},
-  "sessionSecret": "some random text string that will baffle others ability to hack your stuff",
-  "partnerID": "{copied from w3ID completion page}", 
-  "IDP_login_url": "{copied from w3ID completion page}", 
-  "assert_url": "{copied from w3ID completion page}", 
-  "baseApp_url": "{copied from w3ID completion page}", 
-  "cert_folder": "cert",
-  "cert_file": "w3id.staging.sso.ibm.com",
-  "test_certificate": "cert/w3id.staging.sso.ibm.com",
-  "production_certificate": "",
+  "cloudant": {
+    "username": "your-cloudant-user-name",
+    "password": "your-cloudant-password",
+    "host": "cloudant-host-id",
+    "port": 443,
+    "url": "your-cloudant-url"
+  },
+  "couchdb": {
+    "url": "your-couchdb-local-url",
+    "urlBase": "your-couchdb-loca-url-without-http://-prefix",
+    "username": "your-couchdb-username",
+    "password": "your-couchdb-password"
+  },
   "useCouchDB": true
 }
+
