@@ -1,5 +1,4 @@
 /**
- * Copyright 2015 IBM Corp. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,68 +21,62 @@ let path = require('path');
 let RDDnoSQL = {
   cloudantAuth: {},
   noSQLCreds: {},
-  cloudantCredentials: {},
+  _credentials: {},
 
   /**
-   * used to set credentials for either Cloudant or CouchDB. This is required because the URL structure for the two 
+   * used to set credentials for either Cloudant or CouchDB. This is required because the URL structure for the two
    * databases is different.
    * The passed in JSON structure has an element called 'useCouchDB'. If this value is true, then couchDB is used
-   * if this value is false, then Cloudant is used. 
-   * if this value is null, undefined, or a value other than true or false, then cloudantCredentials is set to null
+   * if this value is false, then Cloudant is used.
+   * if this value is null, undefined, or a value other than true or false, then _credentials is set to null
    * and the function returns false.
    * This function returns true on success
    * @returns {Boolean} true on success, false on failure
    */
   setCreds: function() {
-    if ((typeof(this.noSQLCreds) !== 'undefined') && (this.noSQLCreds !== null))
-    {
-      if ((typeof(this.noSQLCreds.useCouchDB) !== 'undefined') && (this.noSQLCreds.useCouchDB !== null))
-      {
-        if (this.noSQLCreds.useCouchDB)
-        {this.cloudantCredentials = this.noSQLCreds.couchdb; return true; }
-        else {this.cloudantCredentials = this.noSQLCreds.cloudant; return true; }
-      }
-      else{
-        this.cloudantCredentials = null;
-        return false;
+    if ((typeof (this.noSQLCreds) !== 'undefined') && (this.noSQLCreds !== null)) {
+      if ((typeof (this.noSQLCreds.useCouchDB) !== 'undefined') && (this.noSQLCreds.useCouchDB !== null)) {
+        if (this.noSQLCreds.useCouchDB) {
+          this._credentials = this.noSQLCreds.couchdb;
+          return true;
+        } else {
+          this._credentials = this.noSQLCreds.cloudant;
+          return true;
         }
-    }
-    else{
-      this.cloudantCredentials = null;
+      } else {
+        this._credentials = null;
+        return false;
+      }
+    } else {
+      this._credentials = null;
       return false;
     }
   },
 
   /**
-   * This retrieves the credentials from the provided file. Try/Catch is used during file processing and also when the file is 
-   * being parsed (JSON.parse). Errors are returned if either function fails. 
-   * Upon successful retrieval and parsing, the getCredsFromJSON function is called to set credentials and save 
+   * This retrieves the credentials from the provided file. Try/Catch is used during file processing and also when the file is
+   * being parsed (JSON.parse). Errors are returned if either function fails.
+   * Upon successful retrieval and parsing, the getCredsFromJSON function is called to set credentials and save
    * the retrieved creds for later use.
    * @param {*} _file nodejs file object with credcentials
    */
   getCredsFromFile: function(_file) {
     let fileCreds;
-    try{fileCreds = fs.readFileSync(_file);}
-    catch(error)
-    {return{failure: 'unable to read from provided file.', error: error};}
+    try { fileCreds = fs.readFileSync(_file); } catch (error) { return {failure: 'unable to read from provided file.', error: error}; }
     let parseFile;
-    try{JSON.parse(fileCreds);}
-    catch(error)
-    {return{failure: 'unable to parse provided credentials.', error: error};}
-    this.getCredsFromJSON(parseFile);
+    try { parseFile = JSON.parse(fileCreds); } catch (error) { return {failure: 'unable to parse provided credentials.', error: error}; }
+    return (this.getCredsFromJSON(parseFile));
   },
 
   /**
-   * This takes the inbound credentials and saves them. This function calls setCreds() which returns false if the 
+   * This takes the inbound credentials and saves them. This function calls setCreds() which returns false if the
    * inbound object does not contain a correctly formatted useCouchDB Boolean object.
    * @param {JSON object} _creds inbound credentials to save.
    */
   getCredsFromJSON: function(_creds) {
     this.noSQLCreds = _creds;
-    if (this.setCreds())
-    {return {success: this.noSQLCreds};}
-    else{return({failure: 'setCreds failed. Most like due to missing or incorrect useCouchDB value in JSON '})}
-    
+    if (this.setCreds()) { return {success: this.noSQLCreds}; } else { return ({failure: 'setCreds failed. Most like due to missing or incorrect useCouchDB value in JSON '}); }
+
   },
 
   /**
@@ -94,9 +87,9 @@ let RDDnoSQL = {
   getDBPath: function() {
     let url;
     if (cfenv.getAppEnv().isLocal) { //console.log("using local database");
-      url = 'http://' + this.cloudantCredentials.username + ':' + this.cloudantCredentials.password + '@' + this.cloudantCredentials.urlBase;
+      url = 'http://' + this._credentials.username + ':' + this._credentials.password + '@' + this._credentials.urlBase;
     } else { //console.log("using host database");
-      url = this.cloudantCredentials.url + '/';
+      url = this._credentials.url + '/';
     }
     return url;
   },
@@ -105,18 +98,20 @@ let RDDnoSQL = {
    * authenticate user to service
    */
   authenticate: function() {
-    let params = 'name=' + this.cloudantCredentials.username + '&password=' + this.cloudantCredentials.password;
+    let params = 'name=' + this._credentials.username + '&password=' + this._credentials.password;
     let method = 'POST';
     let url = this.getDBPath() + '/_session';
     let headers = {};
     headers['content-type'] = 'application/x-www-form-urlencoded';
-    headers.Referer = this.cloudantCredentials.url;
+    headers.Referer = this._credentials.url;
     let _rdd = this;
     return new Promise(function(resolve, reject) {
       request(
         {url: url, method: method, headers: headers, form: params},
         function(error, response, body) {
-          let _body = JSON.parse(body);
+          console.log('authenticate error: ', error);
+          let _body;
+          try { _body = JSON.parse(body); } catch (_error) { reject({error: _error}); }
           if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
             if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
           } else {
@@ -143,7 +138,8 @@ let RDDnoSQL = {
         headers: {'set-cookie': _rdd.cloudantAuth, Accept: '/'},
         method: method
       }, function(error, response, body) {
-        let _body = JSON.parse(body);
+        let _body;
+        try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
         if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
           if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
         } else { resolve({success: _body}); }
@@ -163,7 +159,8 @@ let RDDnoSQL = {
       request(
         {url: url, method: method},
         function(error, response, body) {
-          let _body = JSON.parse(body);
+          let _body;
+          try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
           if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
             if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
           } else { resolve({success: _body}); }
@@ -211,7 +208,8 @@ let RDDnoSQL = {
       request(
         {url: url, method: method},
         function(error, response, body) {
-          let _body = JSON.parse(body);
+          let _body;
+          try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
           if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
             if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
           } else { resolve({success: _body}); }
@@ -234,7 +232,8 @@ let RDDnoSQL = {
       request(
         {url: url, method: method},
         function(error, response, body) {
-          let _body = JSON.parse(body);
+          let _body;
+          try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
           if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
             if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
           } else { resolve({success: _body}); }
@@ -358,7 +357,7 @@ let RDDnoSQL = {
   },
 
   /**
- * used to find records using key values from multiple fields. 
+ * used to find records using key values from multiple fields.
  * This is analogous to an SQL statement of the form:
  * Select * from {table} where field1=keyArray[0] and field2=keyArray[1];
  * The number of keys provided in keyArray should match the number of select fields in view
@@ -385,7 +384,9 @@ let RDDnoSQL = {
       request(
         {url: url, method: method, json: object, headers: {'Content-Type': 'application/json'}},
         function(error, response, body) {
-          let _body = JSON.parse(body);
+          let _body;
+          _body = body;
+          _body.total_rows = _body.rows.length;
           if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
             if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
           } else { resolve({success: _body}); }
@@ -405,7 +406,8 @@ let RDDnoSQL = {
       request(
         {url: url, method: method},
         function(error, response, body) {
-          let _body = JSON.parse(body);
+          let _body;
+          try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
           if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
             if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error}); } else { reject({error: error}); }
           } else { resolve({success: {rows: _body.rows, total_rows: _body.total_rows}}); }
@@ -426,7 +428,8 @@ let RDDnoSQL = {
       request(
         {url: url, method: method},
         function(error, response, body) {
-          let _body = JSON.parse(body);
+          let _body;
+          try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
           if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
             if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error}); } else { reject({error: error}); }
           } else { resolve({success: {rows: _body, total_rows: _body.length}}); }
@@ -474,7 +477,7 @@ let RDDnoSQL = {
           let name = 'Backup_';
           name = name + ((_name === '') ? 'allFiles' : _name);
           name = name + '_' + _rdd.getTimeStamp() + '.json';
-          let fileName = path.join(__dirname, 'HTML/backups', name);
+          let fileName = path.join(__dirname, _rdd.noSQLCreds.backupFolder, name);
           let rows = _body.success.rows;
           let _views = '"views": ['; let viewNum = 0;
           let _str = '[';
@@ -482,7 +485,7 @@ let RDDnoSQL = {
           for (let each = 0; each < rows.length; each++) {
             (function(_idx, _array) {
               if (_array[_idx].doc._id !== '_design/views') {
-                if (_idx > 0) { _str = _str + ', '; }
+                if (_str !== '[') { _str = _str + ', '; }
                 _str = _str + JSON.stringify(_array[_idx].doc);
                 records++;
               } else {
@@ -508,15 +511,17 @@ let RDDnoSQL = {
  * @param {String} _name name of file to use for restoration. The table to be restored is defined by the file.
  */
   restoreTable: function(_name) {
-    let fileName = process.cwd() + '/HTML/backups/' + _name;
-    let restoreObject = JSON.parse(fs.readFileSync(fileName));
-    // console.log("restore data: "+JSON.stringify(restoreObject.rows));
-    // drop existing table
-    let _table = restoreObject.table;
+    let fileName = path.join(__dirname, this.noSQLCreds.backupFolder, _name);
+    let fileObject = fs.readFileSync(fileName);
+    let restoreObject;
     let records = new Array();
     let views = new Array();
     let _rdd = this;
     return new Promise(function(resolve, reject) {
+      try { restoreObject = JSON.parse(fileObject); } catch (error) { console.log('JASON.parse error: ', error); reject({error: error}); }
+      // console.log("restore data: "+JSON.stringify(restoreObject.rows));
+      // drop existing table
+      let _table = restoreObject.table;
       return _rdd.drop(_table)
         .then(() => {
           _rdd.create(_table)
@@ -532,11 +537,11 @@ let RDDnoSQL = {
                   return _rdd.insert(_table, _object)
                     .then(_res => { records.push({success: {id: _object._id, success: _res}}); })
                     .catch(_err => { records.push({error: {id: _object.id, error: _err}}); });
-                  })(each, restoreObject.rows);
+                })(each, restoreObject.rows);
               }
               // insert all the views
               for (let each = 0; each < restoreObject.views.length; each++) {
-                (function(_idx, _arr){
+                (function(_idx, _arr) {
                   let _object = {}; _object.content = _arr[_idx];
                   _object._id = _object.content._id;
                   _object._rev = _object.content._rev;
@@ -545,19 +550,20 @@ let RDDnoSQL = {
                   return _rdd.insert(_table, _object)
                     .then(_res => { views.push({success: {id: _object._id, success: _res}}); })
                     .catch(_err => { views.push({error: {id: _object.id, error: _err}}); });
-                  })(each, restoreObject.views)
+                })(each, restoreObject.views);
               }
               console.log('success!');
               resolve({success: {table: _table, records: records, views: views}});
             })
             .catch(error2 => {
             // table create error
-            console.log('create error: ', error2);  
+              console.log('create error: ', error2);
               reject({error: error2});
             });
         })
+        // eslint-disable-next-line no-unused-vars
         .catch(error1 => {
-            _rdd.create(_table)
+          _rdd.create(_table)
             .then(() => {
               // insert all the rows
               for (let each = 0; each < restoreObject.rows.length; each++) {
@@ -568,13 +574,13 @@ let RDDnoSQL = {
                   delete _object.content._id;
                   delete _object.content._rev;
                   return _rdd.insert(_table, _object)
-                  .then(_res => { records.push({success: {id: _object._id, success: _res}}); })
-                  .catch(_err => { records.push({error: {id: _object.id, error: _err}}); });
-                  })(each, restoreObject.rows);
+                    .then(_res => { records.push({success: {id: _object._id, success: _res}}); })
+                    .catch(_err => { records.push({error: {id: _object.id, error: _err}}); });
+                })(each, restoreObject.rows);
               }
               // insert all the views
               for (let each = 0; each < restoreObject.views.length; each++) {
-                (function(_idx, _arr){
+                (function(_idx, _arr) {
                   let _object = {}; _object.content = _arr[_idx];
                   _object._id = _object.content._id;
                   _object._rev = _object.content._rev;
@@ -583,13 +589,13 @@ let RDDnoSQL = {
                   return _rdd.insert(_table, _object)
                     .then(_res => { views.push({success: {id: _object._id, success: _res}}); })
                     .catch(_err => { views.push({error: {id: _object.id, error: _err}}); });
-                  })(each, restoreObject.views)
+                })(each, restoreObject.views);
               }
-              resolve({success: {table: _table}});
+              resolve({success: {table: _table, records: records, views: views}});
             })
             .catch(error2 => {
             // table create error
-            console.log('create error: ', error2);  
+              console.log('create error: ', error2);
               reject({error: error2});
             });
         });
@@ -638,4 +644,4 @@ exports.setCreds = RDDnoSQL.setCreds;
 exports.cloudantAuth = RDDnoSQL.cloudantAuth;
 exports.noSQLCreds = RDDnoSQL.noSQLCreds;
 exports.getTimeStamp = RDDnoSQL.getTimeStamp;
-exports.cloudantCredentials = RDDnoSQL.cloudantCredentials;
+exports._credentials = RDDnoSQL._credentials;
