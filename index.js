@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+'use strict';
 let request = require('request');
-let cfenv = require('cfenv');
 let fs = require('fs');
 let path = require('path');
 
@@ -86,8 +86,8 @@ let RDDnoSQL = {
   */
   getDBPath: function() {
     let url;
-    if (cfenv.getAppEnv().isLocal) { //console.log("using local database");
-      url = 'http://' + this._credentials.username + ':' + this._credentials.password + '@' + this._credentials.urlBase;
+    if (this.noSQLCreds.useCouchDB) {
+      url = 'http://' + this._credentials.username + ':' + this._credentials.password + '@' + this._credentials.urlBase + '/';
     } else { //console.log("using host database");
       url = this._credentials.url + '/';
     }
@@ -100,7 +100,7 @@ let RDDnoSQL = {
   authenticate: function() {
     let params = 'name=' + this._credentials.username + '&password=' + this._credentials.password;
     let method = 'POST';
-    let url = this.getDBPath() + '/_session';
+    let url = this.getDBPath() + '_session';
     let headers = {};
     headers['content-type'] = 'application/x-www-form-urlencoded';
     headers.Referer = this._credentials.url;
@@ -109,11 +109,10 @@ let RDDnoSQL = {
       request(
         {url: url, method: method, headers: headers, form: params},
         function(error, response, body) {
-          console.log('authenticate error: ', error);
           let _body;
           try { _body = JSON.parse(body); } catch (_error) { reject({error: _error}); }
           if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
+            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
           } else {
             _rdd.cloudantAuth = response.headers['set-cookie'];
             resolve({success: response});
@@ -139,7 +138,7 @@ let RDDnoSQL = {
         method: method
       }, function(error, response, body) {
         let _body;
-        try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
+        try { _body = JSON.parse(body); } catch (jError) { console.log('create error: ', error); console.log('parse error: ', jError); reject({error: jError}); }
         if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
           if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
         } else { resolve({success: _body}); }
@@ -161,8 +160,11 @@ let RDDnoSQL = {
         function(error, response, body) {
           let _body;
           try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
-          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
+          if (error) {
+            reject({error: error});
+          } else if (typeof (_body) === 'undefined') {
+            reject({error: 'undefined error on drop'});
+          } else if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason});
           } else { resolve({success: _body}); }
         }
       );
@@ -423,7 +425,7 @@ let RDDnoSQL = {
   listAllDatabases: function() {
     // list all databases
     let method = 'GET';
-    let url = this.getDBPath() + '/_all_dbs';
+    let url = this.getDBPath() + '_all_dbs';
     return new Promise(function(resolve, reject) {
       request(
         {url: url, method: method},

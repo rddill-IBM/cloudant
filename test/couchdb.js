@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 
+'use strict';
 let assert = require('assert');
 let path = require('path');
 let fs = require('fs');
@@ -63,10 +64,10 @@ describe('#dbSuite get Authentication object', function() {
   });
 });
 
-describe('#getDBPath() checking local', function() {
+describe('#getDBPath() checking CouchDB', function() {
   //console.log('using local database');
   it('should equal the value provided for CouchDB in env.json file', function() {
-    let url = 'http://' + authJSON.couchdb.username + ':' + authJSON.couchdb.password + '@' + authJSON.couchdb.urlBase;
+    let url = 'http://' + authJSON.couchdb.username + ':' + authJSON.couchdb.password + '@' + authJSON.couchdb.urlBase + '/';
     console.log(url);
     db.getCredsFromJSON(authJSON);
     console.log(db.getDBPath());
@@ -74,7 +75,7 @@ describe('#getDBPath() checking local', function() {
   });
 });
 
-describe('#authenticate() checking local', function() {
+describe('#authenticate() checking CouchDB', function() {
 // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should authenticate without error', function() {
@@ -98,7 +99,7 @@ describe('#authenticate() checking local', function() {
       });
   });
 });
-describe('#create() checking local', function() {
+describe('#create() checking CouchDB', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should create without error', function() {
@@ -119,7 +120,7 @@ describe('#create() checking local', function() {
   });
 });
 
-describe('#drop() checking local', function() {
+describe('#drop() checking CouchDB', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should drop without error', function() {
@@ -133,14 +134,14 @@ describe('#drop() checking local', function() {
             assert.equal(true, _db.success.ok);
           })
           .catch(error => {
-            assert.equal(true, (typeof (error) === 'undefined'));
             console.log('drop error: ', error.error);
+            assert.equal(true, (typeof (error) === 'undefined'));
           });
       });
   });
 });
 
-describe('#insert() checking local', function() {
+describe('#insert() checking CouchDB', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should insert without error', function() {
@@ -174,7 +175,7 @@ describe('#insert() checking local', function() {
   });
 });
 
-describe('#delete() checking local', function() {
+describe('#delete() checking CouchDB', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should delete without error', function() {
@@ -215,7 +216,7 @@ describe('#delete() checking local', function() {
   });
 });
 
-describe('#getOne() checking local', function() {
+describe('#getOne() checking CouchDB', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should retrieve a single record without error', function() {
@@ -254,7 +255,7 @@ describe('#getOne() checking local', function() {
   });
 });
 
-describe('#update() checking local', function() {
+describe('#update() checking CouchDB', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should update a single record without error', function() {
@@ -294,7 +295,7 @@ describe('#update() checking local', function() {
   });
 });
 
-describe('#select() checking local', function() {
+describe('#select() checking CouchDB', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should retrieve a single record without error', function() {
@@ -352,7 +353,7 @@ describe('#select() checking local', function() {
   });
 });
 
-describe('#select2() checking local', function() {
+describe('#select2() checking CouchDB', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should retrieve a single and multiple records without error', function() {
@@ -431,7 +432,7 @@ describe('#select2() checking local', function() {
   });
 });
 
-describe('#selectMulti() checking local', function() {
+describe('#selectMulti() checking CouchDB', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should retrieve all records without error', function() {
@@ -503,57 +504,7 @@ describe('#selectMulti() checking local', function() {
   });
 });
 
-describe('#listAlDatabases() create a list of all databases on local', function() {
-  // this is an asynch function. need to include 'done' as part of test
-  db.getCredsFromJSON(authJSON);
-  it('should list all tables without error', function() {
-    return db.authenticate()
-      .then(_auth => {
-        assert.equal(true, (typeof (_auth.success) !== 'undefined'));
-        return db.create(db1)
-          .then(_db => {
-            assert.equal(true, (typeof (_db.error) === 'undefined'));
-            return db.create(db2)
-              .then(_db2 => {
-                assert.equal(true, _db2.success.ok);
-                return db.listAllDatabases()
-                  .then(_select => {
-                    assert.equal(2, _select.success.total_rows);
-                    assert.equal(db1, _select.success.rows[0]);
-                    return db.drop(db1)
-                      .then(_dbd => {
-                      })
-                      .catch(error => {
-                      })
-                      .then(() => db.drop(db2)
-                        .then(_dbd => {
-                        })
-                        .catch(error => {
-                        }));
-                  })
-                  .catch(error7 => {
-                    console.log('listAllDatabases error: ', error7);
-                    assert.equal(true, (typeof (error7) === 'undefined'));
-                  });
-              })
-              .catch(error3 => {
-                console.log('db # 2 create error: ', error3.error);
-                assert.equal(true, (typeof (error3) === 'undefined'));
-              });
-          })
-          .catch(error2 => {
-            console.log('db create error: ', error2.error);
-            assert.equal(true, (typeof (error2) === 'undefined'));
-          });
-      })
-      .catch(error => {
-        console.log('authenticate error: ', error.error);
-        assert.equal(true, (typeof (error) === 'undefined'));
-      });
-  });
-});
-
-describe('#getDocs() checking local', function() {
+describe('#getDocs() checking CouchDB', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should retrieve all records without error', function() {
