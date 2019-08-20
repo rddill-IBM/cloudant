@@ -7,7 +7,7 @@ npm-debug.log*
 *.m4v
 *.m4a
 *.mov
-
+google.maps.api.json
 /HTML/backups
 
 /.idea/
