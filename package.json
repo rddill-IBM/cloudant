@@ -1,7 +1,7 @@
 {
-  "name": "couch-cloudant",
+  "name": "@rddill/cloudant",
   "version": "1.0.0",
-  "private": "public",
+  "private": false,
   "description": "common no sql access for local couchDB and cloud based Cloudant",
   "main": "index.js",
   "scripts": {
@@ -19,12 +19,9 @@
   "author": "Bob Dill, IBM Distinguished Engineer",
   "license": "Apache-2.0",
   "dependencies": {
-    "cfenv": "^1.2.2",
     "fs": "0.0.1-security",
     "path": "^0.12.7",
-    "request": "^2.88.0",
-    "response": "^0.18.0",
-    "stream-browserify": "^2.0.2"
+    "request": "^2.88.0"
   },
   "engines": {
     "node": "8.x",
@@ -33,8 +30,8 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "jsdoc": "^3.6.3",
-    "mocha": "^6.0.2",
-    "nyc": "^13.3.0"
+    "mocha": "^6.2.0",
+    "nyc": "^14.1.1"
   },
   "nyc": {
     "exclude": [
@@ -42,8 +39,10 @@
       "node_modules/**",
       "HTML/**",
       "coverage/**",
+      ".nyc_output/**",
+      "out/**",
       "cloudant/**"
-    ],
+      ],
     "reporter": [
       "text-summary",
       "html"
@@ -54,5 +53,8 @@
     "branches": 100,
     "functions": 100,
     "lines": 100
+  },
+  "directories": {
+    "test": "test"
   }
 }

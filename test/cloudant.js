@@ -5,7 +5,6 @@ let assert = require('assert');
 let path = require('path');
 let fs = require('fs');
 let db = require('../index.js');
-let cfenv = require('cfenv');
 let envFile = path.join(__dirname, 'db.env.json');
 let authJSON = JSON.parse(fs.readFileSync(envFile));
 let targetDB = (authJSON.useCouchDB === true ? 'CouchDB' : 'Cloudant');
@@ -528,7 +527,7 @@ describe('#listAllDatabases() create a list of all databases on local', function
                 assert.equal(true, _db2.success.ok);
                 return db.listAllDatabases()
                   .then(_select => {
-                    assert.equal(2, _select.success.total_rows);
+                    assert.equal(11, _select.success.total_rows);
                     // assert.equal(db1, _select.success.rows[0]);
                     return db.drop(db1)
                       .then(_dbd => {
