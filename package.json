@@ -32,7 +32,27 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
+    "jsdoc": "^3.6.3",
     "mocha": "^6.0.2",
     "nyc": "^13.3.0"
+  },
+  "nyc": {
+    "exclude": [
+      "test/**",
+      "node_modules/**",
+      "HTML/**",
+      "coverage/**",
+      "cloudant/**"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "all": true,
+    "check-coverage": true,
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100
   }
 }
