@@ -6,8 +6,11 @@ let path = require('path');
 let fs = require('fs');
 let db = require('../index.js');
 let cfenv = require('cfenv');
-let envFile = path.join(__dirname, 'cloudant.env.json');
+let envFile = path.join(__dirname, 'db.env.json');
 let authJSON = JSON.parse(fs.readFileSync(envFile));
+let targetDB = (authJSON.useCouchDB === true ? 'CouchDB' : 'Cloudant');
+let targetURL = (authJSON.useCouchDB === true ? authJSON.couchdb.url.slice(0, 7) + authJSON.couchdb.username + ':' + authJSON.couchdb.password + '@' + authJSON.couchdb.url.slice(7) : authJSON.cloudant.url);
+let targetUser = (authJSON.useCouchDB === true ? authJSON.couchdb.username : authJSON.cloudant.username);
 let db1 = 'test-table1';
 let db2 = 'test-table2';
 let record1 = {field1: {field1a: 'field1a-1 content'}, field2: 'field2 content', field3: 'joy'};
@@ -28,7 +31,7 @@ let view2 = {_id: '_design/views',
   }};
 let backupFile = '';
 let _c = {};
-_c.authenticate = 'function (): uses credentials in env.json file to authenticate to cloudant server';
+_c.authenticate = 'function (): uses credentials in env.json file to authenticate to couchdb or cloudant server';
 before(() => {
   let _res = db.getCredsFromJSON(authJSON);
   return db.authenticate()
@@ -52,22 +55,23 @@ describe('#dbSuite get Authentication object', function() {
   describe('#getCredsFromJSON()', function() {
     it('should return same Object as supplied', function() {
       let _res = db.getCredsFromJSON(authJSON);
-      let userName = _res.success.cloudant.username;
-      assert.equal(authJSON.cloudant.username, userName);
+      let userName = (authJSON.useCouchDB === true ? _res.success.couchdb.username : _res.success.cloudant.username);
+      assert.equal(targetUser, userName);
     });
   });
   describe('#getCredsFromFile()', function() {
     it('should return Object from provided file', function() {
       let _fRes = db.getCredsFromFile(envFile);
-      assert.equal(authJSON.cloudant.username, _fRes.success.cloudant.username);
+      let resUser = (authJSON.useCouchDB === true ? _fRes.success.couchdb.username : _fRes.success.cloudant.username);
+      assert.equal(targetUser, resUser);
     });
   });
 });
 
-describe('#getDBPath() checking Cloudant', function() {
+describe('#getDBPath() checking ' + targetDB + '', function() {
   //console.log('using local database');
-  it('should equal the value provided for CouchDB in env.json file', function() {
-    let url = authJSON.cloudant.url + '/';
+  it('should equal the value provided for ' + targetDB + ' in env.json file', function() {
+    let url = targetURL + '/';
     console.log(url);
     db.getCredsFromJSON(authJSON);
     console.log(db.getDBPath());
@@ -75,7 +79,7 @@ describe('#getDBPath() checking Cloudant', function() {
   });
 });
 
-describe('#authenticate() checking Cloudant', function() {
+describe('#authenticate() checking ' + targetDB + '', function() {
 // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should authenticate without error', function() {
@@ -88,7 +92,7 @@ describe('#authenticate() checking Cloudant', function() {
         assert.equal(true, (typeof (error) === 'undefined'));
       });
   });
-  it('should equal the value provided for CouchDB in env.json file', function() {
+  it('should equal the value provided for ' + targetDB + ' in env.json file', function() {
     return db.authenticate()
       .then(_auth => {
         assert.equal(true, (typeof (_auth.success) !== 'undefined'));
@@ -99,7 +103,7 @@ describe('#authenticate() checking Cloudant', function() {
       });
   });
 });
-describe('#create() checking Cloudant', function() {
+describe('#create() checking ' + targetDB + '', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should create without error', function() {
@@ -108,7 +112,6 @@ describe('#create() checking Cloudant', function() {
         assert.equal(true, (typeof (_auth.success) !== 'undefined'));
         return db.create(db1)
           .then(_db => {
-            console.log('create _db.error: ', _db.error);
             assert.equal(true, (typeof (_db.error) === 'undefined'));
             assert.equal(true, (typeof (_db.success) !== 'undefined'));
             assert.equal(true, _db.success.ok);
@@ -121,7 +124,7 @@ describe('#create() checking Cloudant', function() {
   });
 });
 
-describe('#drop() checking Cloudant', function() {
+describe('#drop() checking ' + targetDB + '', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should drop without error', function() {
@@ -142,7 +145,7 @@ describe('#drop() checking Cloudant', function() {
   });
 });
 
-describe('#insert() checking Cloudant', function() {
+describe('#insert() checking ' + targetDB + '', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should insert without error', function() {
@@ -176,7 +179,7 @@ describe('#insert() checking Cloudant', function() {
   });
 });
 
-describe('#delete() checking Cloudant', function() {
+describe('#delete() checking ' + targetDB + '', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should delete without error', function() {
@@ -217,7 +220,7 @@ describe('#delete() checking Cloudant', function() {
   });
 });
 
-describe('#getOne() checking Cloudant', function() {
+describe('#getOne() checking ' + targetDB + '', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should retrieve a single record without error', function() {
@@ -256,7 +259,7 @@ describe('#getOne() checking Cloudant', function() {
   });
 });
 
-describe('#update() checking Cloudant', function() {
+describe('#update() checking ' + targetDB + '', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should update a single record without error', function() {
@@ -297,7 +300,7 @@ describe('#update() checking Cloudant', function() {
   });
 });
 
-describe('#select() checking Cloudant', function() {
+describe('#select() checking ' + targetDB + '', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should retrieve a single record without error', function() {
@@ -356,7 +359,7 @@ describe('#select() checking Cloudant', function() {
   });
 });
 
-describe('#select2() checking Cloudant', function() {
+describe('#select2() checking ' + targetDB + '', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should retrieve a single and multiple records without error', function() {
@@ -436,7 +439,7 @@ describe('#select2() checking Cloudant', function() {
   });
 });
 
-describe('#selectMulti() checking Cloudant', function() {
+describe('#selectMulti() checking ' + targetDB + '', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should retrieve all records without error', function() {
@@ -525,7 +528,7 @@ describe('#listAllDatabases() create a list of all databases on local', function
                 assert.equal(true, _db2.success.ok);
                 return db.listAllDatabases()
                   .then(_select => {
-                    assert.equal(11, _select.success.total_rows);
+                    assert.equal(2, _select.success.total_rows);
                     // assert.equal(db1, _select.success.rows[0]);
                     return db.drop(db1)
                       .then(_dbd => {
@@ -560,7 +563,7 @@ describe('#listAllDatabases() create a list of all databases on local', function
   });
 });
 
-describe('#getDocs() checking Cloudant', function() {
+describe('#getDocs() checking ' + targetDB + '', function() {
   // this is an asynch function. need to include 'done' as part of test
   db.getCredsFromJSON(authJSON);
   it('should retrieve all records without error', function() {

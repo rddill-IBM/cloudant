@@ -20,7 +20,7 @@
     "dot-notation": "error",
     "eqeqeq": ["error", "always"],
     "no-alert": 1,
-    "no-console": 1,
+    "no-console": 0,
     "no-caller": "error",
     "no-empty": ["error", { "allowEmptyCatch": true }],
     "no-eval": "error",

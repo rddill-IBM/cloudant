@@ -24,6 +24,12 @@ let RDDnoSQL = {
   _credentials: {},
 
   /**
+   * add code to handle IAM based authentication.
+   * use test to determine approach.
+   * if (typeof (_credentials.apikey !== 'undefined')) {then use IAM, else use existing}
+   */
+
+  /**
    * used to set credentials for either Cloudant or CouchDB. This is required because the URL structure for the two
    * databases is different.
    * The passed in JSON structure has an element called 'useCouchDB'. If this value is true, then couchDB is used
@@ -164,7 +170,8 @@ let RDDnoSQL = {
             reject({error: error});
           } else if (typeof (_body) === 'undefined') {
             reject({error: 'undefined error on drop'});
-          } else if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason});
+          } else if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) {
+            reject({error: _body.error + ' ' + _body.reason});
           } else { resolve({success: _body}); }
         }
       );
@@ -446,7 +453,7 @@ let RDDnoSQL = {
    */
   capabilities: function() {
     let _c = {};
-    _c.authenticate = 'function (): uses credentials in env.json file to authenticate to cloudant server';
+    _c.authenticate = 'function (): uses credentials in env.json file to authenticate to couchdb or cloudant server';
     _c.create = 'function (_name): create a new database';
     _c.drop = 'function (_name): drop a database';
     _c.insert = 'function (_name, _object): insert JSON _object into database _name';
