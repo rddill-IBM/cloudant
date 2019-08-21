@@ -104,6 +104,9 @@ let RDDnoSQL = {
    * authenticate user to service
    */
   authenticate: function() {
+    if ((this._credentials === null) || (typeof this._credentials === 'undefined')) {
+      return {error: new Error('Authentication failed. No credentials provided.')};
+    }
     let params = 'name=' + this._credentials.username + '&password=' + this._credentials.password;
     let method = 'POST';
     let url = this.getDBPath() + '_session';
@@ -460,13 +463,15 @@ let RDDnoSQL = {
     _c.update = 'function (_name, _oid, _object): update JSON object specified by object _oid in database _name with new object _object';
     _c.select = 'function (_name, _selector): select objects from database _name specified by selection criteria _selector';
     _c.select2 = 'function (_name, _keysw, _selector): select objects from database _name specified by selection criteria _selector using multiple keys as defined in keys';
-    _c.delete = 'function (_name, _oid): delete object specified by _oid in database _name';
+    _c._delete = 'function (_name, _oid): delete object specified by _oid in database _name';
     _c.listAllDatabases = 'function (): list all databases I can access';
     _c.getDocs = 'function (_name): list all documents in database _name';
     _c.capabilities = 'return this object with descriptors.';
     _c.createBackup = 'function (_name): create a backup of database _name.';
     _c.getBackups = 'function (): get a list of available time-stamped backups.';
     _c.restoreTable = 'function (_file): restore database _name.';
+    _c.getCredsFromFile = 'function (_file): ingests credentials from file at provided absolute path.';
+    _c.getCredsFromJSON = 'function (JSON): ingest credentials from provided JSON object.';
     return (_c);
   },
 

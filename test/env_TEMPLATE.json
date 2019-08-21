@@ -12,6 +12,8 @@
     "username": "your-couchdb-username",
     "password": "your-couchdb-password"
   },
-  "useCouchDB": true
+  "useCouchDB": true,
+  "backups": "/HTML/backups",
+  "backupFolder": ""
 }
 
