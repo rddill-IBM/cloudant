@@ -7,6 +7,8 @@ let fs = require('fs');
 let db = require('../index.js');
 let envFile = path.join(__dirname, 'db.env.json');
 let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+console.log('authJSON.backupFolder: ', authJSON.backupFolder);
 let targetDB = (authJSON.useCouchDB === true ? 'CouchDB' : 'Cloudant');
 let targetURL = (authJSON.useCouchDB === true ? authJSON.couchdb.url.slice(0, 7) + authJSON.couchdb.username + ':' + authJSON.couchdb.password + '@' + authJSON.couchdb.url.slice(7) : authJSON.cloudant.url);
 let targetUser = (authJSON.useCouchDB === true ? authJSON.couchdb.username : authJSON.cloudant.username);

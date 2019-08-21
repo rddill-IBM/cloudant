@@ -491,7 +491,7 @@ let RDDnoSQL = {
           let name = 'Backup_';
           name = name + ((_name === '') ? 'allFiles' : _name);
           name = name + '_' + _rdd.getTimeStamp() + '.json';
-          let fileName = path.join(__dirname, _rdd.noSQLCreds.backupFolder, name);
+          let fileName = path.join(_rdd.noSQLCreds.backupFolder, name);
           let rows = _body.success.rows;
           let _views = '"views": ['; let viewNum = 0;
           let _str = '[';
@@ -525,7 +525,7 @@ let RDDnoSQL = {
  * @param {String} _name name of file to use for restoration. The table to be restored is defined by the file.
  */
   restoreTable: function(_name) {
-    let fileName = path.join(__dirname, this.noSQLCreds.backupFolder, _name);
+    let fileName = path.join(this.noSQLCreds.backupFolder, _name);
     let fileObject = fs.readFileSync(fileName);
     let restoreObject;
     let records = new Array();
@@ -621,7 +621,7 @@ let RDDnoSQL = {
    * @returns {*} fs. generated file list
    */
   getBackups: function() {
-    let loc = process.cwd() + this.noSQLCreds.backupFolder;
+    let loc = this.noSQLCreds.backupFolder;
     let files = fs.readdirSync(loc);
     return (files);
   },
