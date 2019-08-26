@@ -64,7 +64,8 @@ let RDDnoSQL = {
    * being parsed (JSON.parse). Errors are returned if either function fails.
    * Upon successful retrieval and parsing, the getCredsFromJSON function is called to set credentials and save
    * the retrieved creds for later use.
-   * @param {*} _file nodejs file object with credcentials
+   * @param {object} file object with credentials
+   * @returns {JSON} parsed credentials from file
    */
   getCredsFromFile: function(_file) {
     let fileCreds;
@@ -78,6 +79,7 @@ let RDDnoSQL = {
    * This takes the inbound credentials and saves them. This function calls setCreds() which returns false if the
    * inbound object does not contain a correctly formatted useCouchDB Boolean object.
    * @param {JSON} _creds inbound credentials to save.
+   * @returns {JSON} parsed credentials
    */
   getCredsFromJSON: function(_creds) {
     this.noSQLCreds = _creds;
@@ -102,6 +104,7 @@ let RDDnoSQL = {
 
   /**
    * authenticate user to service
+   * @returns {JSON} object with response or error object
    */
   authenticate: function() {
     if ((this._credentials === null) || (typeof this._credentials === 'undefined')) {
@@ -624,8 +627,7 @@ let RDDnoSQL = {
     let loc = this.noSQLCreds.backupFolder;
     let files = {};
     return new Promise(function(resolve, reject) {
-      try { files = fs.readdirSync(loc); } 
-      catch (error) { console.log('JASON.parse error: ', error); reject({error: error}); }
+      try { files = fs.readdirSync(loc); } catch (error) { console.log('JASON.parse error: ', error); reject({error: error}); }
       resolve({success: files});
     });
   },
