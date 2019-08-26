@@ -68,9 +68,9 @@ let RDDnoSQL = {
    */
   getCredsFromFile: function(_file) {
     let fileCreds;
-    try { fileCreds = fs.readFileSync(_file); } catch (error) { return {failure: 'unable to read from provided file.', error: error}; }
+    try { fileCreds = fs.readFileSync(_file); } catch (error) { return {errorMessage: 'unable to read from provided file.', error: error}; }
     let parseFile;
-    try { parseFile = JSON.parse(fileCreds); } catch (error) { return {failure: 'unable to parse provided credentials.', error: error}; }
+    try { parseFile = JSON.parse(fileCreds); } catch (error) { return {errorMessage: 'unable to parse provided credentials.', error: error}; }
     return (this.getCredsFromJSON(parseFile));
   },
 
@@ -81,7 +81,7 @@ let RDDnoSQL = {
    */
   getCredsFromJSON: function(_creds) {
     this.noSQLCreds = _creds;
-    if (this.setCreds()) { return {success: this.noSQLCreds}; } else { return ({failure: 'setCreds failed. Most like due to missing or incorrect useCouchDB value in JSON '}); }
+    if (this.setCreds()) { return {success: this.noSQLCreds}; } else { return ({errorMessage: 'setCreds failed. Most like due to missing or incorrect useCouchDB value in JSON '}); }
 
   },
 
@@ -622,8 +622,12 @@ let RDDnoSQL = {
    */
   getBackups: function() {
     let loc = this.noSQLCreds.backupFolder;
-    let files = fs.readdirSync(loc);
-    return (files);
+    let files = {};
+    return new Promise(function(resolve, reject) {
+      try { files = fs.readdirSync(loc); } 
+      catch (error) { console.log('JASON.parse error: ', error); reject({error: error}); }
+      resolve({success: files});
+    });
   },
 
   /**

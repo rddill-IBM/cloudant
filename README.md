@@ -55,6 +55,10 @@ let envFile = path.join(__dirname, 'db.env.json');
 // ingest the credentials
 let _fRes = db.getCredsFromFile(envFile);
 ```
+on Success, returns JSON object with credentials for selected data base
+on Failure, returns JSON object with two elements:
+ - errorMessage: text string
+ - error: error object
 
 ### getCredsFromJSON
 ```js
@@ -69,6 +73,10 @@ authJSON.backupFolder = process.cwd() + authJSON.backups;
 // ingest the credentials
 let _fRes = db.getCredsFromJSON(authJSON);
 ```
+on Success, returns JSON object with credentials for selected data base
+on Failure, returns JSON object with two elements:
+ - errorMessage: text string
+ - error: error object
 
 ### authenticate
 ```js
@@ -83,6 +91,12 @@ authJSON.backupFolder = process.cwd() + authJSON.backups;
 let _fRes = db.getCredsFromJSON(authJSON);
 let _auth = db.authenticate();
 ```
+on Success, returns response object from database authenticate action
+on Failure, returns JSON object with one of three error elements:
+ - errorMessage: if authenticate credentials do not exist, then returns text string with message stating authenticate credentials are null
+ - errorMessage: if body.error exists, then returns text string with body.error + body.reason
+ - error: if body.error does not exist, then returns error object
+
 ## Database Management Services:
 ### create
 ```js
@@ -108,6 +122,14 @@ return db.authenticate()
       });
   });
 ```
+on Success, returns JSON object with body object from create operation
+ - {success: _body}
+on create Failure, returns JSON object:
+ - {errorMessage: text string}
+ - {error: Error object}
+on JSON Parse Failure, returns JSON object with one element:
+ - {error: JSON error object}
+
 ### drop
 ```js
 // get the path node module
@@ -131,6 +153,13 @@ let _fRes = db.getCredsFromJSON(authJSON);
         });
     });
 ```
+on Success, returns JSON object with body object from drop operation:
+ - {success: { success: { ok: true } }}
+on create Failure, returns JSON object:
+ - {errorMessage: text string}
+on JSON Parse Failure, returns JSON object with one element:
+ - {error: JSON error object}
+
 ### listAllDatabases
 ```js
 // get the path node module
@@ -156,6 +185,13 @@ return db.authenticate()
 
   )};
 ```
+on Success, returns JSON object with following object from operation:
+ - {success: {rows: [array of table names], total_rows: (# of rows in array)}
+on create Failure, returns JSON object:
+ - {errorMessage: text string}
+on JSON Parse Failure, returns JSON object with one element:
+ - {error: JSON error object}
+
 ## Backup and Restore Services: 
 ### createBackup
 ```js
@@ -228,8 +264,11 @@ return db.authenticate()
       .catch(error => {
           console.log('getBackups error: ', error.error);
         });
-
 ```
+on Success, returns JSON object with following object from operation:
+ - {success: files }
+on Failure, returns JSON object:
+ - {error: error}
 
 ### restoreTable
 ```js
@@ -254,6 +293,13 @@ return db.authenticate()
           console.log('restoreTable error: ', error.error);
         });
 ```
+on Success, returns JSON object with following object from operation:
+ - {success: {table: _table, records: records, views: views}}
+ - The records object and the views object list each record and view inserted using either a success object (e.g. successfully inserted), or a failure object (unsuccessful insert):
+   - {success: {id: _object._id, success: _res}}
+   - {error: {id: _object.id, error: _err}}
+on table create Failure, returns JSON object:
+ - {error: error}
 
 ## Data Manipulation Services: 
 ### _delete
@@ -283,6 +329,15 @@ return db.authenticate()
       });
   });
 ```
+on Success, returns JSON object with body object from operation:
+ - {success: { ok: true,
+     id: (text string with oid of deleted document),
+     rev: (text string with rev of deleted document) }}
+on delete Failure, returns JSON object:
+ - {errorMessage: text string}
+ - {error: Error object}
+on JSON Parse Failure, returns JSON object with one element:
+ - {error: JSON error object}
 
 ### insert
 ```js
@@ -308,6 +363,13 @@ return db.authenticate()
       });
   });
 ```
+on Success, returns JSON object with body object from operation:
+ - {success: { ok: true,
+     id: (text string with oid of inserted document),
+     rev: (text string with rev of inserted document) }}
+on insert Failure, returns JSON object:
+ - {errorMessage: text string}
+ - {error: Error object}
 
 ### update
 ```js
@@ -337,6 +399,15 @@ return db.authenticate()
     });
   });
 ```
+on Success, returns JSON object with body object from operation:
+ - {success: { ok: true,
+     id: (text string with oid of inserted document),
+     rev: (text string with rev of inserted document) }}
+on insert Failure, returns JSON object:
+ - {errorMessage: text string}
+ - {error: Error object}
+on get Failure (e.g. record to update does not exist), returns JSON object:
+ - {error: Error object}
 
 ### select
 ```js
@@ -377,6 +448,11 @@ return db.authenticate()
       console.log('db insert error: ', error);
     });
 ```
+on Success, returns JSON object with body object from operation:
+ - {success: { total_rows: (number of rows in response), offset: 0, rows: [ array of documents comprising result set ] }}
+on select Failure, returns JSON object:
+ - {errorMessage: text string}
+ - {error: Error object}
 
 ### select2
 ```js
@@ -408,6 +484,11 @@ return db.authenticate()
     });
   });
 ```
+on Success, returns JSON object with body object from operation:
+ - {success: { rows: [ array of documents comprising result set ] }}
+on insert Failure, returns JSON object:
+ - {errorMessage: text string}
+ - {error: Error object}
 
 ### selectMulti
 ```js
@@ -447,6 +528,11 @@ return db.authenticate()
     });
   });
 ```
+on Success, returns JSON object with body object from operation:
+ - {success: { total_rows: (number of rows in response), offset: 0, rows: [ array of documents comprising result set ] }} 
+on select2 Failure, returns JSON object:
+ - {errorMessage: text string}
+ - {error: Error object}
 
 ### getDocs
 ```js
@@ -470,6 +556,11 @@ return db.authenticate()
       console.log('db insert error: ', error);
     });
 ```
+on Success, returns JSON object with body object from operation:
+ - {success: {rows: [array of document objects], total_rows: (# of rows in array)}}
+on getDocs Failure, returns JSON object:
+ - {errorMessage: text string}
+ - {error: Error object}
 
 ## About this service:
 ### capabilities
@@ -479,8 +570,7 @@ let path = require('path');
 let db = require(rddill/cloudant);
 let _capabilities = db.capabilities();
 ```
-
-
+on Success, returns JSON object with each operation as a key and the value of each operation a short description of each service
 
 ## Test results (August, 2019)
 ```

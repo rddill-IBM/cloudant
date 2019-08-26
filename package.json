@@ -1,6 +1,6 @@
 {
   "name": "@rddill/cloudant",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "common no sql access for local couchDB and cloud based Cloudant",
   "main": "index.js",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.ibm.com/rddill-IBM/cloudant"
+    "url": "https://github.com/rddill-IBM/cloudant"
   },
   "keywords": [
     "CouchDB",
