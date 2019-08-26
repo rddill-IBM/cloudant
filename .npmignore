@@ -1,0 +1,6 @@
+/.nyc_output
+/coverage
+/HTML/backups/*.*
+/node_modules
+/out
+db.env.json
