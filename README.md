@@ -43,6 +43,8 @@ The final item, useCouchDB requires either ```true``` or ```false``` as the supp
 
 Each service uses standard JSDOC documentation, [which is available here](./out/index.js.html)
 
+Where authentication is required in the following examples, the complete authentication process is shown. When using these services in an on-going basis, providing credentials and then performing authentication is only required once; it does not have to be done each time a service request has been made. The cloudant module preserves the result of the last authentication action and uses that result in subsequent service execution. 
+
 ## Authentication Services:
 ### getCredsFromFile
 ```js
@@ -123,7 +125,7 @@ return db.authenticate()
   });
 ```
 on Success, returns JSON object with body object from create operation
- - {success: _body}
+ - {success: (complete response object)}
 on create Failure, returns JSON object:
  - {errorMessage: text string}
  - {error: Error object}
