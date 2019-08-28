@@ -213,14 +213,14 @@ describe('#delete() checking ' + targetDB + '', function() {
                         console.log('db drop error during delete tests: ', error);
                       });
                   })
-                  .catch(error => {
-                    assert.equal(true, (typeof (error) === 'undefined'));
-                    console.log('delete error: ', error.error);
+                  .catch(error2 => {
+                    console.log('delete error: ', error2);
+                    assert.equal(true, (typeof (error2) === 'undefined'));
                   });
               })
-              .catch(error => {
-                assert.equal(true, (typeof (error) === 'undefined'));
-                console.log('delete error: ', error.error);
+              .catch(error3 => {
+                console.log('delete error: ', error3);
+                assert.equal(true, (typeof (error3) === 'undefined'));
               });
           });
       });

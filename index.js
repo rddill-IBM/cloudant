@@ -256,7 +256,7 @@ module.exports = {
   *  - if body.error exists: {error: _body.error + ' ' + body.reason}
   *  - if body.error does not exist: {error: error}
   */
-  deleteItem: function(_name, _oid, _rev) {
+  _delete: function(_name, _oid, _rev) {
     // delete object specified by _oid in database _name /$DATABASE/$DOCUMENT_ID?rev=$REV
     //_name, _oid, _rev, cbfn
     let method = 'DELETE';
@@ -532,7 +532,7 @@ module.exports = {
 
   /**
   * call this function to get a JSON object which lists each of the services which can be requested from this module
-  * @returns (JSON) json object which has elements named after the callable functions
+  * @returns {JSON} json object which has elements named after the callable functions
   */
   capabilities: function() {
     let _c = {};
@@ -724,29 +724,29 @@ module.exports = {
 };
 
 /*
-exports.authenticate = RDDnoSQL.authenticate;
-exports.create = RDDnoSQL.create;
-exports.drop = RDDnoSQL.drop;
-exports.insert = RDDnoSQL.insert;
-exports.update = RDDnoSQL.update;
-exports._delete = RDDnoSQL.deleteItem;
-exports.listAllDatabases = RDDnoSQL.listAllDatabases;
-exports.listAllDocuments = RDDnoSQL.listAllDocuments;
-exports.capabilities = RDDnoSQL.capabilities;
-exports.getDocs = RDDnoSQL.getDocs;
-exports.getDBPath = RDDnoSQL.getDBPath;
-exports.getOne = RDDnoSQL.getOne;
-exports.select = RDDnoSQL.select;
-exports.select2 = RDDnoSQL.select2;
-exports.selectMulti = RDDnoSQL.selectMulti;
-exports.createBackup = RDDnoSQL.createBackup;
-exports.restoreTable = RDDnoSQL.restoreTable;
-exports.getBackups = RDDnoSQL.getBackups;
-exports.getCredsFromFile = RDDnoSQL.getCredsFromFile;
-exports.getCredsFromJSON = RDDnoSQL.getCredsFromJSON;
-exports.setCreds = RDDnoSQL.setCreds;
-exports.cloudantAuth = RDDnoSQL.cloudantAuth;
-exports.noSQLCreds = RDDnoSQL.noSQLCreds;
-exports.getTimeStamp = RDDnoSQL.getTimeStamp;
-exports._credentials = RDDnoSQL._credentials;
+module.exports.authenticate = RDDnoSQL.authenticate;
+module.exports.create = RDDnoSQL.create;
+module.exports.drop = RDDnoSQL.drop;
+module.exports.insert = RDDnoSQL.insert;
+module.exports.update = RDDnoSQL.update;
+module.exports._delete = RDDnoSQL.delete;
+module.exports.listAllDatabases = RDDnoSQL.listAllDatabases;
+module.exports.listAllDocuments = RDDnoSQL.listAllDocuments;
+module.exports.capabilities = RDDnoSQL.capabilities;
+module.exports.getDocs = RDDnoSQL.getDocs;
+module.exports.getDBPath = RDDnoSQL.getDBPath;
+module.exports.getOne = RDDnoSQL.getOne;
+module.exports.select = RDDnoSQL.select;
+module.exports.select2 = RDDnoSQL.select2;
+module.exports.selectMulti = RDDnoSQL.selectMulti;
+module.exports.createBackup = RDDnoSQL.createBackup;
+module.exports.restoreTable = RDDnoSQL.restoreTable;
+module.exports.getBackups = RDDnoSQL.getBackups;
+module.exports.getCredsFromFile = RDDnoSQL.getCredsFromFile;
+module.exports.getCredsFromJSON = RDDnoSQL.getCredsFromJSON;
+module.exports.setCreds = RDDnoSQL.setCreds;
+module.exports.cloudantAuth = RDDnoSQL.cloudantAuth;
+module.exports.noSQLCreds = RDDnoSQL.noSQLCreds;
+module.exports.getTimeStamp = RDDnoSQL.getTimeStamp;
+module.exports._credentials = RDDnoSQL._credentials;
 */

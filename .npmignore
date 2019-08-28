@@ -1,5 +1,7 @@
 /.nyc_output
 /coverage
+/docs
 /HTML/backups/*.*
 /node_modules
+/out
 db.env.json
