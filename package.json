@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index",
-    "test": "nyc --reporter=html mocha --recursive"
+    "test": "nyc --reporter=html mocha --recursive",
+    "generate-docs": "jsdoc -r  . -d docs -c jsdoc.json README.md"
   },
   "repository": {
     "type": "git",
@@ -42,7 +43,7 @@
       ".nyc_output/**",
       "out/**",
       "cloudant/**"
-      ],
+    ],
     "reporter": [
       "text-summary",
       "html"

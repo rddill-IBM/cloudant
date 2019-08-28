@@ -5,9 +5,18 @@
     },
     "source": {
         "include": [
-            "./*"
+            "./index.js"
         ],
-        "includePattern": ".+\\.js(doc|x)?$"
+        "includePattern": ".+\\.js(doc|x)?$",
+        "excludePattern": "(^|\\/|\\\\)_",
+        "exclude": [
+            "node_modules",
+            ".nyc_output",
+            "coverage",
+            "docs",
+            "out",
+            "test"
+        ]
     },
     "plugins": ["plugins/markdown"],
     "templates": {

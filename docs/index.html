@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>Cloudant.js</h1>
+<p>Common routines to allow SQL-like access to either CouchDB or Cloudant. Requests run identically in both environments. The service requires a json object with credentials for either or both Cloudant and CouchDB.</p>
+<h2>The format of the json object is:</h2>
+<pre class="prettyprint source lang-JSON"><code>{
+  &quot;cloudant&quot;: {
+    &quot;username&quot;: &quot;your-cloudant-user-name&quot;,
+    &quot;password&quot;: &quot;your-cloudant-password&quot;,
+    &quot;host&quot;: &quot;cloudant-host-id&quot;,
+    &quot;port&quot;: 443,
+    &quot;url&quot;: &quot;your-cloudant-url&quot;
+  },
+  &quot;couchdb&quot;: {
+    &quot;url&quot;: &quot;your-couchdb-local-url&quot;,
+    &quot;urlBase&quot;: &quot;your-couchdb-loca-url-without-http://-prefix&quot;,
+    &quot;username&quot;: &quot;your-couchdb-username&quot;,
+    &quot;password&quot;: &quot;your-couchdb-password&quot;
+  },
+  &quot;useCouchDB&quot;: true
+}
+</code></pre>
+<p>The final item, useCouchDB requires either <code>true</code> or <code>false</code> as the supplied value. If useCouchDB is true then the cloudant credentials are ignored and valid credentials are required for your couchdb data base. if useCouchDB is false, then the couchdb credentials are ignored and valid credentials are required for your cloudant data base.</p>
+<h2>This service supports the following capabilities:</h2>
+<ul>
+<li><strong>getCredsFromFile</strong> = 'function (_file): ingests credentials from file at provided absolute path.';</li>
+<li><strong>getCredsFromJSON</strong> = 'function (JSON): ingest credentials from provided JSON object.';</li>
+<li><strong>authenticate</strong> = 'function (): uses credentials ingested via one of the setCreds services to authenticate to couchdb or cloudant server';</li>
+<li><strong>create</strong> = 'function (_name): create a new database';</li>
+<li><strong>drop</strong> = 'function (_name): drop a database';</li>
+<li><strong>insert</strong> = 'function (_name, _object): insert JSON _object into database _name';</li>
+<li><strong>update</strong> = 'function (_name, _oid, _object): update JSON object specified by object _oid in database _name with new object _object';</li>
+<li><strong>select</strong> = 'function (_name, _selector): select objects from database _name specified by selection criteria _selector';</li>
+<li><strong>select2</strong> = 'function (_name, _keysw, _selector): select objects from database _name specified by selection criteria _selector using multiple keys as defined in keys';</li>
+<li><strong>_delete</strong> = 'function (_name, _oid): delete object specified by _oid in database _name';</li>
+<li><strong>listAllDatabases</strong> = 'function (): list all databases I can access';</li>
+<li><strong>getDocs</strong> = 'function (_name): list all documents in database _name';</li>
+<li><strong>capabilities</strong> = 'return this object with descriptors.';</li>
+<li><strong>createBackup</strong> = 'function (_name): create a backup of database _name.';</li>
+<li><strong>getBackups</strong> = 'function (): get a list of available time-stamped backups.';</li>
+<li><strong>restoreTable</strong> = 'function (_file): restore database _name.';</li>
+</ul>
+<p>Each service uses standard JSDOC documentation, <a href="./out/index.js.html">which is available here</a></p>
+<p>Where authentication is required in the following examples, the complete authentication process is shown. When using these services in an on-going basis, providing credentials and then performing authentication is only required once; it does not have to be done each time a service request has been made. The cloudant module preserves the result of the last authentication action and uses that result in subsequent service execution.</p>
+<h2>Authentication Services:</h2>
+<h3>getCredsFromFile</h3>
+<pre class="prettyprint source lang-js"><code>// in this example, credentials are held in a file called db.env.json which is in the root folder of the calling function.
+// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+// ingest the credentials
+let _fRes = db.getCredsFromFile(envFile);
+</code></pre>
+<p>on Success, returns JSON object with credentials for selected data base<br>
+on Failure, returns JSON object with two elements:</p>
+<ul>
+<li>errorMessage: text string</li>
+<li>error: error object</li>
+</ul>
+<h3>getCredsFromJSON</h3>
+<pre class="prettyprint source lang-js"><code>// in this example, credentials are held in a file called db.env.json which is in the root folder of the calling function.
+// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+</code></pre>
+<p>on Success, returns JSON object with credentials for selected data base<br>
+on Failure, returns JSON object with two elements:</p>
+<ul>
+<li>errorMessage: text string</li>
+<li>error: error object</li>
+</ul>
+<h3>authenticate</h3>
+<pre class="prettyprint source lang-js"><code>// in this example, credentials are held in a file called db.env.json which is in the root folder of the calling function.
+// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+let _auth = db.authenticate();
+</code></pre>
+<p>on Success, returns response object from database authenticate action<br>
+on Failure, returns JSON object with one of three error elements:</p>
+<ul>
+<li>errorMessage: if authenticate credentials do not exist, then returns text string with message stating authenticate credentials are null</li>
+<li>errorMessage: if body.error exists, then returns text string with body.error + body.reason</li>
+<li>error: if body.error does not exist, then returns error object</li>
+</ul>
+<h2>Database Management Services:</h2>
+<h3>create</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    return db.create(db1)
+      .then(_db => {
+        console.log('create successful: ', _db_);
+        // Your code to process once creation complete goes here
+      })
+      .catch(error => {
+        console.log('create error: ', error.error);
+      });
+  });
+</code></pre>
+<p>on Success, returns JSON object with body object from create operation</p>
+<ul>
+<li>{success: (complete response object)}<br>
+on create Failure, returns JSON object:</li>
+<li>{errorMessage: text string}</li>
+<li>{error: Error object}<br>
+on JSON Parse Failure, returns JSON object with one element:</li>
+<li>{error: JSON error object}</li>
+</ul>
+<h3>drop</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+  return db.authenticate()
+    .then(_auth => {
+      return db.drop(db1)
+        .then(_db => {
+          // insert your code here for successful completion
+        })
+        .catch(error => {
+          console.log('drop error: ', error.error);
+        });
+    });
+</code></pre>
+<p>on Success, returns JSON object with body object from drop operation:</p>
+<ul>
+<li>{success: { success: { ok: true } }}<br>
+on create Failure, returns JSON object:</li>
+<li>{errorMessage: text string}<br>
+on JSON Parse Failure, returns JSON object with one element:</li>
+<li>{error: JSON error object}</li>
+</ul>
+<h3>listAllDatabases</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    return db.listAllDatabases()
+      .then(_select => {
+        // process the returned list of data bases
+        // check the _select.success object for details
+      })
+      .catch(error => {
+          console.log('listAllDatabases error: ', error.error);
+        });
+
+  )};
+</code></pre>
+<p>on Success, returns JSON object with following object from operation:</p>
+<ul>
+<li>{success: {rows: [array of table names], total_rows: (# of rows in array)}<br>
+on create Failure, returns JSON object:</li>
+<li>{errorMessage: text string}<br>
+on JSON Parse Failure, returns JSON object with one element:</li>
+<li>{error: JSON error object}</li>
+</ul>
+<h2>Backup and Restore Services:</h2>
+<h3>createBackup</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require('rddill/cloudant');
+let fs = require('fs');
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    return db.createBackup(db1)
+      .then(_select => {
+        backupFile = _select.success.name;
+        let _backup = _select.success
+        // actually create the backup file on your local system...
+        // the following example creates a backup in your defined backup folder location
+        // separating the view content from the data content
+        // This should be treated as a working EXAMPLE and modified accordingly for your own purposes.
+        let fileName = authJSON.backupFolder + 'Backup_';
+        fileName += (_backup.name == &quot;&quot;) ? &quot;allFiles&quot; : backupFile;
+        fileName +=&quot;_&quot;+getTimeStamp()+&quot;.json&quot;;
+        console.log(&quot;creating backup at: &quot;, fileName);
+        let rows = JSON.parse(_backup).row;
+        let _views = '&quot;views&quot;: ['; var viewNum = 0;
+        let _str = &quot;[&quot;;
+        for (let each = 0; each &lt; rows.length; each++)
+        {(function(_idx, _array)
+          {
+            if(_array[_idx].doc._id != '_design/views')
+            { if(_idx>0){_str+=&quot;, &quot;;}
+              _str+=JSON.stringify(_array[_idx].doc); 
+            }
+            else {
+              if(viewNum>0){_views+=&quot;, &quot;;} _views += '{ &quot;_id&quot;: &quot;_design/views&quot;, &quot;views&quot;:' +JSON.stringify(_array[_idx].doc.views)+'}';
+            }
+          })(each, rows)}
+        _str+=&quot;]&quot;; _views += &quot;]&quot;;
+        fs.writeFileSync(fileName, '{&quot;table&quot; : &quot;'+_backup.name+'&quot;, &quot;date&quot;: &quot;'+getTimeStamp()+'&quot;, &quot;rows&quot;: '+_str+', '+_views+'}', 'utf8');
+      })
+      .catch(error => {
+          console.log('create Backup File error: ', error.error);
+        });
+  getTimeStamp: function() { return (new Date(Date.now()).toISOString().replace(/:/g, '.')); }
+</code></pre>
+<h3>getBackups</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    return db.getBackups()
+      .then(_select => {
+        // process the returned list of data bases
+        // check the _select.success object for details
+      })
+      .catch(error => {
+          console.log('getBackups error: ', error.error);
+        });
+</code></pre>
+<p>on Success, returns JSON object with following object from operation:</p>
+<ul>
+<li>{success: files }<br>
+on Failure, returns JSON object:</li>
+<li>{error: error}</li>
+</ul>
+<h3>restoreTable</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+let backupFileName = 'testBackupfile.json';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    return db.restoreTable(backupFile)
+      .then(_restore => {
+        // perform appropriate post-processing and logging here
+      })
+      .catch(error => {
+          console.log('restoreTable error: ', error.error);
+        });
+</code></pre>
+<p>on Success, returns JSON object with following object from operation:</p>
+<ul>
+<li>{success: {table: _table, records: records, views: views}}</li>
+<li>The records object and the views object list each record and view inserted using either a success object (e.g. successfully inserted), or a failure object (unsuccessful insert):
+<ul>
+<li>{success: {id: _object._id, success: _res}}</li>
+<li>{error: {id: _object.id, error: _err}}<br>
+on table create Failure, returns JSON object:</li>
+</ul>
+</li>
+<li>{error: error}</li>
+</ul>
+<h2>Data Manipulation Services:</h2>
+<h3>_delete</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    // delete processing requires that both the oid (object id) and current revision number of the record to be deleted be known before a record can be deleted. The best way to guarantee that this information is correct is to get the record prior to deleting it and then immediately deleting the record. 
+    // This exercise is left up to the reader. 
+    let oid = 'xyz';
+    let rev = 'abc';
+    return db._delete(db1, _ins1.success.id, _ins1.success.rev)
+      .then(_del1 => {
+        // perform appropriate post processing here
+      })
+      .catch(error => {
+        console.log('db drop error: ', error);
+      });
+  });
+</code></pre>
+<p>on Success, returns JSON object with body object from operation:</p>
+<ul>
+<li>{success: { ok: true,<br>
+id: (text string with oid of deleted document),<br>
+rev: (text string with rev of deleted document) }}<br>
+on delete Failure, returns JSON object:</li>
+<li>{errorMessage: text string}</li>
+<li>{error: Error object}<br>
+on JSON Parse Failure, returns JSON object with one element:</li>
+<li>{error: JSON error object}</li>
+</ul>
+<h3>insert</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    let record1 = {field1: 'yada yada', field2 {subf1: 'sub field 1', subf2: 'sub field 2'}};
+    return db.insert(db1, record1)
+      .then(_ins1 => {
+        // perform appropriate post insertion actions and logging here
+      })
+      .catch(error => {
+        console.log('db insert error: ', error);
+      });
+  });
+</code></pre>
+<p>on Success, returns JSON object with body object from operation:</p>
+<ul>
+<li>{success: { ok: true,<br>
+id: (text string with oid of inserted document),<br>
+rev: (text string with rev of inserted document) }}<br>
+on insert Failure, returns JSON object:</li>
+<li>{errorMessage: text string}</li>
+<li>{error: Error object}</li>
+</ul>
+<h3>update</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    // update processing requires that the oid (object id) be known before a record can be updated. 
+    // This exercise is left up to the reader. 
+    let oid = 'xyz';
+    let rev = 'abc';
+    let record1 = {field1: 'yada yada updated', field2 {subf1: 'sub field 1', subf2: 'sub field 2'}};
+    return db.update(db1, oid, record1)
+    .then(_update => {
+      // perform appropriate update and logging post processing here
+    })
+    .catch(error => {
+      console.log('db insert error: ', error);
+    });
+  });
+</code></pre>
+<p>on Success, returns JSON object with body object from operation:</p>
+<ul>
+<li>{success: { ok: true,<br>
+id: (text string with oid of inserted document),<br>
+rev: (text string with rev of inserted document) }}<br>
+on insert Failure, returns JSON object:</li>
+<li>{errorMessage: text string}</li>
+<li>{error: Error object}<br>
+on get Failure (e.g. record to update does not exist), returns JSON object:</li>
+<li>{error: Error object}</li>
+</ul>
+<h3>select</h3>
+<pre class="prettyprint source lang-js"><code>// select processing is analogous to SQL SELECT WHERE FIELD1 = &quot;SOME CONTENT&quot;
+// in a no-sql database like couchdb or cloudant, this requires that the field be specified
+// and that a &quot;view&quot; has been created which allows selection on that field. 
+// In this sample code, that view is located in the database named in the 'db1' variable
+// the search criteria is held in the 'field2' variable. The name of these variables have no
+// bearing on how the selection process actually works. 
+// That is managed in the view created in the database. 
+// an example of a view which will select and return information based on the contents of 
+// a stored JSON variable called 'field2' follows: 
+// {_id: '_design/views',
+//   views: {
+//     byField2: {
+//       map: 'function(doc) {if(doc.field2){emit(doc.field2, doc);} }'
+//     }
+//   }}
+
+// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    let field2 = 'some content on which to select';
+    return db.select(db1, field2, 'byField2')
+    .then(_dbRes => {
+      // post select and logging processing goes here.
+    })
+    .catch(error => {
+      console.log('db insert error: ', error);
+    });
+</code></pre>
+<p>on Success, returns JSON object with body object from operation:</p>
+<ul>
+<li>{success: { total_rows: (number of rows in response), offset: 0, rows: [ array of documents comprising result set ] }}<br>
+on select Failure, returns JSON object:</li>
+<li>{errorMessage: text string}</li>
+<li>{error: Error object}</li>
+</ul>
+<h3>select2</h3>
+<pre class="prettyprint source lang-js"><code>// select2 processing is analogous to SQL SELECT WHERE FIELD1 = &quot;A&quot; OR &quot;B&quot; OR &quot;C&quot;
+// in a no-sql database like couchdb or cloudant, this requires that the field be specified
+// the following code will select documents if 'field3' contains either the word 'joy'
+// or the word 'sorrow'
+
+// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    let key = new Array('joy');
+    key.push('sorrow');
+    return db.select2(db1, key, 'field3')
+    .then(_dbRes => {
+      // post select and logging processing goes here.
+    })
+    .catch(error => {
+      console.log('db select2 error: ', error);
+    });
+  });
+</code></pre>
+<p>on Success, returns JSON object with body object from operation:</p>
+<ul>
+<li>{success: { rows: [ array of documents comprising result set ] }}<br>
+on insert Failure, returns JSON object:</li>
+<li>{errorMessage: text string}</li>
+<li>{error: Error object}</li>
+</ul>
+<h3>selectMulti</h3>
+<pre class="prettyprint source lang-js"><code>// selectMulti processing is analogous to SQL SELECT WHERE FIELD1 = &quot;A&quot; AND FIELD2 = &quot;B&quot;
+// in a no-sql database like couchdb or cloudant, this requires that both fields be specified
+// and that an appropriate view has been specified to support multi-selection.
+// The following view is used to support this kind of query
+// {_id: '_design/views',
+//   views: {
+//     byDualCategory: {
+//       map: 'function (doc) { if (doc.field2 && doc.field3) {emit([doc.field2, doc.field3], doc); } }'
+//     }
+//   }
+// This view expects to be passed an array with the value for 'field2' in array position 0
+// and the value for 'field3' in array position 1
+
+// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    let key = new Array('joy');
+    key.push('sorrow');
+    return db.selectMulti(db1, key, 'byDualCategory')
+    .then(_dbRes => {
+      // post select and logging processing goes here.
+    })
+    .catch(error => {
+      console.log('db selectMulti error: ', error);
+    });
+  });
+</code></pre>
+<p>on Success, returns JSON object with body object from operation:</p>
+<ul>
+<li>{success: { total_rows: (number of rows in response), offset: 0, rows: [ array of documents comprising result set ] }}<br>
+on select2 Failure, returns JSON object:</li>
+<li>{errorMessage: text string}</li>
+<li>{error: Error object}</li>
+</ul>
+<h3>getDocs</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant)
+let db1 = 'test-table1';
+// create a path to the local file (db.env.json)
+let envFile = path.join(__dirname, 'db.env.json');
+let authJSON = JSON.parse(fs.readFileSync(envFile));
+authJSON.backupFolder = process.cwd() + authJSON.backups;
+// ingest the credentials
+let _fRes = db.getCredsFromJSON(authJSON);
+return db.authenticate()
+  .then(_auth => {
+    return db.getDocs(db1)
+    .then(_dbRes => {
+      // post getDocs and logging processing goes here.
+    })
+    .catch(error => {
+      console.log('db insert error: ', error);
+    });
+</code></pre>
+<p>on Success, returns JSON object with body object from operation:</p>
+<ul>
+<li>{success: {rows: [array of document objects], total_rows: (# of rows in array)}}<br>
+on getDocs Failure, returns JSON object:</li>
+<li>{errorMessage: text string}</li>
+<li>{error: Error object}</li>
+</ul>
+<h2>About this service:</h2>
+<h3>capabilities</h3>
+<pre class="prettyprint source lang-js"><code>// get the path node module
+let path = require('path');
+let db = require(rddill/cloudant);
+let _capabilities = db.capabilities();
+</code></pre>
+<p>on Success, returns JSON object with each operation as a key and the value of each operation a short description of each service</p>
+<h2>Test results (August, 2019)</h2>
+<pre class="prettyprint source"><code>npm test
+
+> couch-cloudant@1.0.0 test /Users/rddill/Documents/github/cloudant
+> nyc --reporter=html mocha --recursive
+
+test-table1 was dropped prior to starting tests.
+test-table2 was not present prior to starting tests.
+  #dbSuite get Authentication object
+    #getCredsFromJSON()
+      ✓ should return same Object as supplied
+    #getCredsFromFile()
+      ✓ should return Object from provided file
+
+  #getDBPath() checking Cloudant
+    ✓ should equal the value provided for Cloudant in env.json file
+
+  #authenticate() checking Cloudant
+    ✓ should authenticate without error (187ms)
+    ✓ should equal the value provided for Cloudant in env.json file (202ms)
+
+  #create() checking Cloudant
+    ✓ should create without error (352ms)
+
+  #drop() checking Cloudant
+    ✓ should drop without error (370ms)
+
+  #insert() checking Cloudant
+    ✓ should insert without error (824ms)
+
+  #delete() checking Cloudant
+    ✓ should delete without error (982ms)
+
+  #getOne() checking Cloudant
+    ✓ should retrieve a single record without error (1008ms)
+
+  #update() checking Cloudant
+    ✓ should update a single record without error (1175ms)
+
+  #select() checking Cloudant
+    ✓ should retrieve a single record without error (1317ms)
+
+  #select2() checking Cloudant
+    ✓ should retrieve a single and multiple records without error (1767ms)
+
+  #selectMulti() checking Cloudant
+    ✓ should retrieve all records without error (1514ms)
+
+  #listAllDatabases() create a list of all databases on local
+    ✓ should list all tables without error (1137ms)
+
+  #getDocs() checking Cloudant
+    ✓ should retrieve all records without error (1507ms)
+
+  #createBackup() create a list of all databases on local
+    ✓ should retrieve all records without error (1525ms)
+
+  #restoreTable() should restore a single table on local
+success!
+    ✓ should restore all records without error (1058ms)
+
+  #capabilities() should list all available capabilities
+    ✓ should return a JSON object of functional capabilitieswithout error
+
+  #getBackups() should list all available backups
+    ✓ should return n array of files without error
+
+
+  20 passing (16s)
+</code></pre></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-rddill_cloudant.html">rddill/cloudant</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Wed Aug 28 2019 11:16:40 GMT-0700 (MST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
