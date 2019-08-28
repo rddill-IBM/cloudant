@@ -13,12 +13,17 @@
 * limitations under the License.
 */
 
+/**
+ * CoachCloudant module
+ * @module rddill/cloudant
+ */
+
 'use strict';
 let request = require('request');
 let fs = require('fs');
 let path = require('path');
 
-let RDDnoSQL = {
+module.exports = {
   cloudantAuth: {},
   noSQLCreds: {},
   _credentials: {},
@@ -718,6 +723,7 @@ let RDDnoSQL = {
   getTimeStamp: function() { return (new Date(Date.now()).toISOString().replace(/:/g, '.')); }
 };
 
+/*
 exports.authenticate = RDDnoSQL.authenticate;
 exports.create = RDDnoSQL.create;
 exports.drop = RDDnoSQL.drop;
@@ -743,3 +749,4 @@ exports.cloudantAuth = RDDnoSQL.cloudantAuth;
 exports.noSQLCreds = RDDnoSQL.noSQLCreds;
 exports.getTimeStamp = RDDnoSQL.getTimeStamp;
 exports._credentials = RDDnoSQL._credentials;
+*/
