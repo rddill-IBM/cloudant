@@ -9,6 +9,7 @@ npm-debug.log*
 *.mov
 google.maps.*
 /HTML/backups
+db.env.json
 
 /.idea/
 /.vscode/
