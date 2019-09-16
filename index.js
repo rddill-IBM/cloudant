@@ -137,9 +137,7 @@ module.exports = {
         function(error, response, body) {
           let _body;
           try { _body = JSON.parse(body); } catch (_error) { reject({error: _error}); }
-          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
-          } else {
+          if (error) { console.log('authenticate error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
             _rdd.cloudantAuth = response.headers['set-cookie'];
             resolve({success: response});
           }
@@ -172,10 +170,10 @@ module.exports = {
         method: method
       }, function(error, response, body) {
         let _body;
-        try { _body = JSON.parse(body); } catch (jError) { console.log('create error: ', error); console.log('parse error: ', jError); reject({error: jError}); }
-        if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-          if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
-        } else { resolve({success: _body}); }
+        try { _body = JSON.parse(body); } catch (jError) { console.log('parse error: ', jError); reject({error: jError}); }
+        if (error) { console.log('create error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+          resolve({success: _body});
+        }
       });
     });
   },
@@ -237,9 +235,9 @@ module.exports = {
       request(
         {url: url, json: _object, method: method},
         function(error, response, body) {
-          if ((error) || ((typeof (body.error) !== 'undefined') && (body.error !== null))) {
-            if ((typeof (body.error) !== 'undefined') && (body.error !== null)) { reject({error: body.error + ' ' + body.reason}); } else { reject({error: error}); }
-          } else { resolve({success: body}); }
+          if (error) { console.log('insert error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (body.error) !== 'undefined') && (body.error !== null))) { console.log('_body.error: ', body.error); reject({error: body.error + ' ' + body.reason}); } else {
+            resolve({success: body});
+          }
         }
       );
     });
@@ -256,7 +254,7 @@ module.exports = {
   *  - if body.error exists: {error: _body.error + ' ' + body.reason}
   *  - if body.error does not exist: {error: error}
   */
-  _delete: function(_name, _oid, _rev) {
+  deleteItem: function(_name, _oid, _rev) {
     // delete object specified by _oid in database _name /$DATABASE/$DOCUMENT_ID?rev=$REV
     //_name, _oid, _rev, cbfn
     let method = 'DELETE';
@@ -267,9 +265,9 @@ module.exports = {
         function(error, response, body) {
           let _body;
           try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
-          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
-          } else { resolve({success: _body}); }
+          if (error) { console.log('deleteItem error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+            resolve({success: _body});
+          }
         }
       );
     });
@@ -296,9 +294,9 @@ module.exports = {
         function(error, response, body) {
           let _body;
           try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
-          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
-          } else { resolve({success: _body}); }
+          if (error) { console.log('getOne error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+            resolve({success: _body});
+          }
         }
       );
     });
@@ -339,9 +337,9 @@ module.exports = {
             {url: url, json: orig, method: method},
             function(error2, response2, body2) {
               let _body = body2;
-              if ((error2) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-                if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error2}); }
-              } else { resolve({success: _body}); }
+              if (error2) { console.log('create error: ', error2); reject({error: error2}); } else if ((typeof _body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+                resolve({success: _body});
+              }
             }
           );
         })
@@ -378,9 +376,9 @@ module.exports = {
         {url: url, method: method, json: object, headers: {'Content-Type': 'application/json'}},
         function(error, response, body) {
           let _body = body;
-          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
-          } else { resolve({success: _body}); }
+          if (error) { console.log('select error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+            resolve({success: _body});
+          }
         }
       );
     });
@@ -425,9 +423,9 @@ module.exports = {
         {url: url, method: method, json: object, headers: headers},
         function(error, response, body) {
           let _body = body;
-          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
-          } else { resolve({success: {rows: _body.docs}}); }
+          if (error) { console.log('select2 error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+            resolve({success: _body});
+          }
         }
       );
     });
@@ -468,10 +466,11 @@ module.exports = {
         function(error, response, body) {
           let _body;
           _body = body;
+          // eslint-disable-next-line camelcase
           _body.total_rows = _body.rows.length;
-          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error + ' ' + _body.reason}); } else { reject({error: error}); }
-          } else { resolve({success: _body}); }
+          if (error) { console.log('selectMulti error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+            resolve({success: _body});
+          }
         }
       );
     });
@@ -495,9 +494,9 @@ module.exports = {
         function(error, response, body) {
           let _body;
           try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
-          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error}); } else { reject({error: error}); }
-          } else { resolve({success: {rows: _body.rows, total_rows: _body.total_rows}}); }
+          if (error) { console.log('getDocs error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+            resolve({success: _body});
+          }
         }
       );
     });
@@ -522,9 +521,9 @@ module.exports = {
         function(error, response, body) {
           let _body;
           try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
-          if ((error) || ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
-            if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) { reject({error: _body.error}); } else { reject({error: error}); }
-          } else { resolve({success: {rows: _body, total_rows: _body.length}}); }
+          if (error) { console.log('listAllDatabases error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+            resolve({success: _body});
+          }
         }
       );
     });
@@ -532,7 +531,7 @@ module.exports = {
 
   /**
   * call this function to get a JSON object which lists each of the services which can be requested from this module
-  * @returns {JSON} json object which has elements named after the callable functions
+  * @returns (JSON) json object which has elements named after the callable functions
   */
   capabilities: function() {
     let _c = {};
@@ -722,31 +721,3 @@ module.exports = {
   */
   getTimeStamp: function() { return (new Date(Date.now()).toISOString().replace(/:/g, '.')); }
 };
-
-/*
-module.exports.authenticate = RDDnoSQL.authenticate;
-module.exports.create = RDDnoSQL.create;
-module.exports.drop = RDDnoSQL.drop;
-module.exports.insert = RDDnoSQL.insert;
-module.exports.update = RDDnoSQL.update;
-module.exports._delete = RDDnoSQL.delete;
-module.exports.listAllDatabases = RDDnoSQL.listAllDatabases;
-module.exports.listAllDocuments = RDDnoSQL.listAllDocuments;
-module.exports.capabilities = RDDnoSQL.capabilities;
-module.exports.getDocs = RDDnoSQL.getDocs;
-module.exports.getDBPath = RDDnoSQL.getDBPath;
-module.exports.getOne = RDDnoSQL.getOne;
-module.exports.select = RDDnoSQL.select;
-module.exports.select2 = RDDnoSQL.select2;
-module.exports.selectMulti = RDDnoSQL.selectMulti;
-module.exports.createBackup = RDDnoSQL.createBackup;
-module.exports.restoreTable = RDDnoSQL.restoreTable;
-module.exports.getBackups = RDDnoSQL.getBackups;
-module.exports.getCredsFromFile = RDDnoSQL.getCredsFromFile;
-module.exports.getCredsFromJSON = RDDnoSQL.getCredsFromJSON;
-module.exports.setCreds = RDDnoSQL.setCreds;
-module.exports.cloudantAuth = RDDnoSQL.cloudantAuth;
-module.exports.noSQLCreds = RDDnoSQL.noSQLCreds;
-module.exports.getTimeStamp = RDDnoSQL.getTimeStamp;
-module.exports._credentials = RDDnoSQL._credentials;
-*/
