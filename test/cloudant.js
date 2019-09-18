@@ -162,7 +162,6 @@ describe('#insert() checking ' + targetDB + '', function() {
             assert.equal(true, (typeof (_db.error) === 'undefined'));
             return db.insert(db1, record1)
               .then(_ins1 => {
-                console.log('insert response: ', _ins1);
                 assert.equal(true, (typeof (_ins1.error) === 'undefined'));
                 assert.equal(true, (typeof (_ins1.success) !== 'undefined'));
                 assert.equal(true, _ins1.success.ok);
@@ -200,9 +199,8 @@ describe('#delete() checking ' + targetDB + '', function() {
                 assert.equal(true, (typeof (_ins1.error) === 'undefined'));
                 assert.equal(true, (typeof (_ins1.success) !== 'undefined'));
                 assert.equal(true, _ins1.success.ok);
-                return db._delete(db1, _ins1.success.id, _ins1.success.rev)
+                return db.deleteItem(db1, _ins1.success.id, _ins1.success.rev)
                   .then(_del1 => {
-                    console.log('delete response: ', _del1);
                     assert.equal(true, (typeof (_del1.error) === 'undefined'));
                     assert.equal(true, (typeof (_del1.success) !== 'undefined'));
                     assert.equal(true, _del1.success.ok);
@@ -244,7 +242,6 @@ describe('#getOne() checking ' + targetDB + '', function() {
                 assert.equal(true, _ins1.success.ok);
                 return db.getOne(db1, _ins1.success.id)
                   .then(dbGet1 => {
-                    console.log('getOne response: ', dbGet1);
                     assert.equal(_ins1.success.id, dbGet1.success._id);
                     assert.equal(record1.field2, dbGet1.success.field2);
                     return db.drop(db1)
@@ -286,7 +283,6 @@ describe('#update() checking ' + targetDB + '', function() {
                 record1.field2 = rec1F2;
                 return db.update(db1, _ins1.success.id, record1)
                   .then(dbGet1 => {
-                    console.log('update response: ', dbGet1);
                     assert.equal(true, dbGet1.success.ok);
                     assert.equal(_ins1.success.id, dbGet1.success.id);
                     return db.drop(db1)
@@ -333,7 +329,6 @@ describe('#select() checking ' + targetDB + '', function() {
                         assert.equal(true, _view1.success.ok);
                         return db.select(db1, record1.field2, 'byField2')
                           .then(_select => {
-                            console.log('select response: ', _select);
                             assert.equal(2, _select.success.total_rows);
                             return db.drop(db1)
                               .then(_dbd => {
@@ -395,13 +390,12 @@ describe('#select2() checking ' + targetDB + '', function() {
                             let key = new Array('joy');
                             return db.select2(db1, key, 'field3')
                               .then(_select => {
-                                console.log('select2 response: ', _select);
-                                assert.equal(1, _select.success.rows.length);
-                                assert.equal(key[0], _select.success.rows[0].field3);
+                                assert.equal(1, _select.success.docs.length);
+                                assert.equal(key[0], _select.success.docs[0].field3);
                                 key.push('sorrow');
                                 return db.select2(db1, key, 'field3')
                                   .then(_select2 => {
-                                    assert.equal(2, _select2.success.rows.length);
+                                    assert.equal(2, _select2.success.docs.length);
                                     return db.drop(db1)
                                       .then(_dbd => {
                                       })
@@ -478,7 +472,6 @@ describe('#selectMulti() checking ' + targetDB + '', function() {
                             key.push(record1.field3);
                             return db.selectMulti(db1, key, 'byDualCategory')
                               .then(_select => {
-                                console.log('selectMulti response: ', _select);
                                 assert.equal(1, _select.success.total_rows);
                                 assert.equal(key[1], _select.success.rows[0].value.field3);
                                 return db.drop(db1)
@@ -540,8 +533,7 @@ describe('#listAllDatabases() create a list of all databases on local', function
                 assert.equal(true, _db2.success.ok);
                 return db.listAllDatabases()
                   .then(_select => {
-                    console.log('listAllDatabases response: ', _select);
-                    assert.equal(11, _select.success.total_rows);
+                    assert.equal(16, _select.success.length);
                     // assert.equal(db1, _select.success.rows[0]);
                     return db.drop(db1)
                       .then(_dbd => {
@@ -602,7 +594,6 @@ describe('#getDocs() checking ' + targetDB + '', function() {
                             let key = new Array('joy');
                             return db.getDocs(db1)
                               .then(_select => {
-                                console.log('getDocs response: ', _select);
                                 assert.equal(4, _select.success.total_rows);
                                 return db.drop(db1)
                                   .then(_dbd => {
