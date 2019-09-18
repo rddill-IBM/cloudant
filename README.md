@@ -2,7 +2,8 @@
 
 Common routines to allow SQL-like access to either CouchDB or Cloudant. Requests run identically in both environments. The service requires a json object with credentials for either or both Cloudant and CouchDB. 
 
-V1.06 adds error processing for situations when the target DBM is not available. 
+ - V1.06 adds error processing for situations when the target DBM is not available. 
+ - V1.07 updates test script to support change in select2 return
 
 ## The format of the json object is: 
 ```JSON

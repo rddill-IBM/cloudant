@@ -1,12 +1,12 @@
 {
   "name": "@rddill/cloudant",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": false,
   "description": "common no sql access for local couchDB and cloud based Cloudant",
   "main": "index.js",
   "scripts": {
     "start": "node index",
-    "test": "nyc --reporter=html mocha --recursive",
+    "test": "nyc -reporter=html mocha --recursive",
     "generate-docs": "jsdoc -r  . -d docs -c jsdoc.json README.md"
   },
   "repository": {
