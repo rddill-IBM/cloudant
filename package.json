@@ -1,6 +1,6 @@
 {
   "name": "@rddill/cloudant",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": false,
   "description": "common no sql access for local couchDB and cloud based Cloudant",
   "main": "index.js",
