@@ -49,9 +49,11 @@ module.exports = {
       if ((typeof (this.noSQLCreds.useCouchDB) !== 'undefined') && (this.noSQLCreds.useCouchDB !== null)) {
         if (this.noSQLCreds.useCouchDB) {
           this._credentials = this.noSQLCreds.couchdb;
+          this.cloudantAuth = null;
           return true;
         } else {
           this._credentials = this.noSQLCreds.cloudant;
+          this.cloudantAuth = null;
           return true;
         }
       } else {
@@ -103,10 +105,16 @@ module.exports = {
   */
   getDBPath: function() {
     let url;
-    if (this.noSQLCreds.useCouchDB) {
-      url = 'http://' + this._credentials.username + ':' + this._credentials.password + '@' + this._credentials.urlBase + '/';
-    } else { //console.log("using host database");
-      url = this._credentials.url + '/';
+    if (this.noSQLCreds.useCouchDB) { // using CouchDB
+      // use UID/PW authentication for CouchDB
+      url = 'https://' + this._credentials.username + ':' + this._credentials.password + '@' + this._credentials.urlBase + '/';
+    } else { // using Cloudant
+      // eslint-disable-next-line no-lonely-if
+      if (this.noSQLCreds.useIAM) { // using IAM for Cloudant
+        url = 'https://' + this._credentials.host + '/';
+      } else {
+        url = this._credentials.url + '/';
+      }
     }
     return url;
   },
@@ -121,29 +129,66 @@ module.exports = {
   *  - error: if body.error does not exist, then returns error object
   */
   authenticate: function() {
+    let _rdd = this;
     if ((this._credentials === null) || (typeof this._credentials === 'undefined')) {
       return {error: new Error('Authentication failed. No credentials provided.')};
     }
-    let params = 'name=' + this._credentials.username + '&password=' + this._credentials.password;
-    let method = 'POST';
-    let url = this.getDBPath() + '_session';
-    let headers = {};
-    headers['content-type'] = 'application/x-www-form-urlencoded';
-    headers.Referer = this._credentials.url;
-    let _rdd = this;
-    return new Promise(function(resolve, reject) {
-      request(
-        {url: url, method: method, headers: headers, form: params},
-        function(error, response, body) {
-          let _body;
-          try { _body = JSON.parse(body); } catch (_error) { reject({error: _error}); }
-          if (error) { console.log('authenticate error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
-            _rdd.cloudantAuth = response.headers['set-cookie'];
-            resolve({success: response});
+    if ((this.noSQLCreds.useIAM === null) || (typeof this.noSQLCreds.useIAM === 'undefined') || (this.noSQLCreds.useIAM === false)) {
+      console.log('authenticate: using UID/PW for authentication');
+      let params = 'name=' + this._credentials.username + '&password=' + this._credentials.password;
+      let method = 'POST';
+      let url = this.getDBPath() + '_session';
+      let headers = {};
+      headers['content-type'] = 'application/x-www-form-urlencoded';
+      headers.Referer = this._credentials.url;
+      return new Promise(function(resolve, reject) {
+        request(
+          {url: url, method: method, headers: headers, form: params},
+          function(error, response, body) {
+            let _body;
+            try { _body = JSON.parse(body); } catch (_error) { reject({error: _error}); }
+            if (error) { console.log('authenticate error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+              _rdd.cloudantAuth = response.headers['set-cookie'];
+              resolve({success: response});
+            }
           }
+        );
+      });
+    } else if ((this.noSQLCreds.useIAM !== null) || (typeof this.noSQLCreds.useIAM !== 'undefined') || (this.noSQLCreds.useIAM === true)) {
+      // use IAM authentication
+      console.log('authenticate: using IAM for authentication');
+      let method = 'POST';
+      let url = 'https://iam.cloud.ibm.com/identity/token';
+      let params = {};
+      let headers = {};
+      headers['content-type'] = 'application/x-www-form-urlencoded';
+      headers.accept = 'application/json';
+      headers['Cache-Control'] = 'no-cache';
+      headers.Connection = 'keep-alive';
+      headers.Host = 'iam.cloud.ibm.com';
+      // headers.Referer = this._credentials.url;
+      // eslint-disable-next-line camelcase
+      params.grant_type = 'urn:ibm:params:oauth:grant-type:apikey';
+      params.apikey = this._credentials.apikey;
+      return new Promise(function(resolve, reject) {
+        if (_rdd.cloudantAuth !== null) {
+          resolve({success: _rdd.cloudantAuth});
+        } else {
+          request(
+            {url: url, method: method, headers: headers, form: params},
+            function(error, response, body) {
+              let _body;
+              try { _body = JSON.parse(body); } catch (_error) { reject({error: _error}); }
+              if (error) { console.log('authenticate error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+                let rBody = JSON.parse(response.body);
+                _rdd.cloudantAuth = 'Bearer ' + rBody.access_token;
+                resolve({success: _rdd.cloudantAuth});
+              }
+            }
+          );
         }
-      );
-    });
+      });
+    }
   },
 
   /**
@@ -162,11 +207,22 @@ module.exports = {
     // create a new database
     let method = 'PUT';
     let url = this.getDBPath() + _name;
-    let _rdd = this;
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+      headers.Accept = '/';
+      headers['Cache-Control'] = 'no-cache';
+      headers.Connection = 'keep-alive';
+      headers.Host = this._credentials.host;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
     return new Promise(function(resolve, reject) {
       request({
         url: url,
-        headers: {'set-cookie': _rdd.cloudantAuth, Accept: '/'},
+        headers: headers,
         method: method
       }, function(error, response, body) {
         let _body;
@@ -193,21 +249,34 @@ module.exports = {
     // drop a database
     let method = 'DELETE';
     let url = this.getDBPath() + _name;
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+      headers.Accept = '/';
+      headers['Cache-Control'] = 'no-cache';
+      headers.Connection = 'keep-alive';
+      headers.Host = this._credentials.host;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
     return new Promise(function(resolve, reject) {
-      request(
-        {url: url, method: method},
-        function(error, response, body) {
-          let _body;
-          try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
-          if (error) {
-            reject({error: error});
-          } else if (typeof (_body) === 'undefined') {
-            reject({error: 'undefined error on drop'});
-          } else if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) {
-            reject({error: _body.error + ' ' + _body.reason});
-          } else { resolve({success: _body}); }
-        }
-      );
+      request({
+        url: url,
+        headers: headers,
+        method: method
+      }, function(error, response, body) {
+        let _body;
+        try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
+        if (error) {
+          reject({error: error});
+        } else if (typeof (_body) === 'undefined') {
+          reject({error: 'undefined error on drop'});
+        } else if ((typeof (_body.error) !== 'undefined') && (_body.error !== null)) {
+          reject({error: _body.error + ' ' + _body.reason});
+        } else { resolve({success: _body}); }
+      });
     });
   },
 
@@ -231,15 +300,25 @@ module.exports = {
     let method = 'POST';
     let url = this.getDBPath() + _name;
     delete _object._rev;
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
     return new Promise(function(resolve, reject) {
-      request(
-        {url: url, json: _object, method: method},
-        function(error, response, body) {
-          if (error) { console.log('insert error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (body.error) !== 'undefined') && (body.error !== null))) { console.log('_body.error: ', body.error); reject({error: body.error + ' ' + body.reason}); } else {
-            resolve({success: body});
-          }
+      request({
+        url: url,
+        headers: headers,
+        method: method,
+        json: _object
+      }, function(error, response, body) {
+        if (error) { console.log('insert error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (body.error) !== 'undefined') && (body.error !== null))) { console.log('_body.error: ', body.error); reject({error: body.error + ' ' + body.reason}); } else {
+          resolve({success: body});
         }
-      );
+      });
     });
   },
 
@@ -259,9 +338,19 @@ module.exports = {
     //_name, _oid, _rev, cbfn
     let method = 'DELETE';
     let url = this.getDBPath() + _name + '/' + _oid + '?rev=' + _rev;
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
     return new Promise(function(resolve, reject) {
       request(
-        {url: url, method: method},
+        {url: url,
+          headers: headers,
+          method: method},
         function(error, response, body) {
           let _body;
           try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
@@ -288,9 +377,19 @@ module.exports = {
     // select objects from database _name specified by selection criteria _selector
     let method = 'GET';
     let url = this.getDBPath() + _name + '/' + _oid;
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
     return new Promise(function(resolve, reject) {
       request(
-        {url: url, method: method},
+        {url: url,
+          headers: headers,
+          method: method},
         function(error, response, body) {
           let _body;
           try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
@@ -322,6 +421,14 @@ module.exports = {
     let updateContent = _content;
     let method = 'POST';
     let _rdd = this;
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
     return new Promise(function(resolve, reject) {
       return _rdd.getOne(_name, _id)
         .then(_currRec => {
@@ -334,7 +441,10 @@ module.exports = {
           method = 'PUT';
           let url = _rdd.getDBPath() + _name + '/' + _id;
           request(
-            {url: url, json: orig, method: method},
+            {url: url,
+              headers: headers,
+              json: orig,
+              method: method},
             function(error2, response2, body2) {
               let _body = body2;
               if (error2) { console.log('create error: ', error2); reject({error: error2}); } else if ((typeof _body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
@@ -370,10 +480,21 @@ module.exports = {
     let keySelect = ((typeof (key) === 'undefined') || (key === '')) ? '/_design/views/_view/' + view : '/_design/views/_view/' + view + '?key="' + key + '"';
     // console.log("select is ", select);
     let url = this.getDBPath() + _name + keySelect;
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
     //console.log(url);
     return new Promise(function(resolve, reject) {
       request(
-        {url: url, method: method, json: object, headers: {'Content-Type': 'application/json'}},
+        {url: url,
+          method: method,
+          json: object,
+          headers: headers},
         function(error, response, body) {
           let _body = body;
           if (error) { console.log('select error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
@@ -417,6 +538,12 @@ module.exports = {
     let keySelect = '/_find';
     let url = this.getDBPath() + _name + keySelect;
     let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
     headers['content-type'] = 'application/json';
     return new Promise(function(resolve, reject) {
       request(
@@ -460,9 +587,17 @@ module.exports = {
     let object = {keys: keyArray};
     let keySelect = '/_design/views/_view/' + view + '?key=' + keys;
     let url = this.getDBPath() + _name + keySelect;
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
     return new Promise(function(resolve, reject) {
       request(
-        {url: url, method: method, json: object, headers: {'Content-Type': 'application/json'}},
+        {url: url, method: method, json: object, headers: headers},
         function(error, response, body) {
           let _body;
           _body = body;
@@ -488,9 +623,17 @@ module.exports = {
   getDocs: function(_name) {
     let method = 'GET';
     let url = this.getDBPath() + _name + '/_all_docs?include_docs=true';
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
     return new Promise(function(resolve, reject) {
       request(
-        {url: url, method: method},
+        {url: url, headers: headers, method: method},
         function(error, response, body) {
           let _body;
           try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
@@ -515,9 +658,17 @@ module.exports = {
     // list all databases
     let method = 'GET';
     let url = this.getDBPath() + '_all_dbs';
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
     return new Promise(function(resolve, reject) {
       request(
-        {url: url, method: method},
+        {url: url, headers: headers, method: method},
         function(error, response, body) {
           let _body;
           try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }

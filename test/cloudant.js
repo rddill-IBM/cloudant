@@ -7,7 +7,7 @@ let fs = require('fs');
 let db = require('../index.js');
 let envFile = path.join(__dirname, 'db.env.json');
 let authJSON = JSON.parse(fs.readFileSync(envFile));
-authJSON.backupFolder = process.cwd() + authJSON.backup_path;
+authJSON.backupFolder = process.cwd() + authJSON.backupFolder;
 console.log('authJSON.backupFolder: ', authJSON.backupFolder);
 let targetDB = (authJSON.useCouchDB === true ? 'CouchDB' : 'Cloudant');
 let targetURL = (authJSON.useCouchDB === true ? authJSON.couchdb.url.slice(0, 7) + authJSON.couchdb.username + ':' + authJSON.couchdb.password + '@' + authJSON.couchdb.url.slice(7) : authJSON.cloudant.url);
@@ -75,10 +75,12 @@ describe('#getDBPath() checking ' + targetDB + '', function() {
   //console.log('using local database');
   it('should equal the value provided for ' + targetDB + ' in env.json file', function() {
     let url = targetURL + '/';
-    console.log(url);
     db.getCredsFromJSON(authJSON);
-    console.log(db.getDBPath());
-    assert.equal(url, db.getDBPath());
+    if (authJSON.useIAM === true) {
+      assert.equal('https://' + authJSON.cloudant.host + '/', db.getDBPath());
+    } else {
+      assert.equal(url, db.getDBPath());
+    }
   });
 });
 
@@ -533,7 +535,7 @@ describe('#listAllDatabases() create a list of all databases on local', function
                 assert.equal(true, _db2.success.ok);
                 return db.listAllDatabases()
                   .then(_select => {
-                    assert.equal(16, _select.success.length);
+                    assert.equal(2, _select.success.length);
                     // assert.equal(db1, _select.success.rows[0]);
                     return db.drop(db1)
                       .then(_dbd => {

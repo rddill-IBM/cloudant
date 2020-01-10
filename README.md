@@ -4,27 +4,38 @@ Common routines to allow SQL-like access to either CouchDB or Cloudant. Requests
 
  - V1.06 adds error processing for situations when the target DBM is not available. 
  - V1.07 updates test script to support change in select2 return
+ - V1.08 adds support for IBM IAM authentication. This introduces additional elements to the cloudant object in the json input and also adds an additional element at the end of the sequence (useIAM) with is either true or not. Since IAM is only (currently) applicable to Cloudant, there is no attempt to support it for CouchDB. If useIAM === true, then any values for cloudant username and password are ignored. Likewise, if useIAM !=== true, then any values for the cloudant IAM section are ignored. 
 
 ## The format of the json object is: 
 ```JSON
 {
   "cloudant": {
+    "apikey": "your IAM api key",
+    "host": "your IAM host name",
+    "iam_apikey_description": "API Key description",
+    "iam_apikey_name": "IAM APIKey name",
+    "iam_role_crn": "IAM role",
+    "iam_serviceid_crn": "IBM Service ID",
     "username": "your-cloudant-user-name",
     "password": "your-cloudant-password",
-    "host": "cloudant-host-id",
     "port": 443,
+    "urlBase": "your-cloudant-url-without-http[s]://-prefix",
     "url": "your-cloudant-url"
   },
   "couchdb": {
     "url": "your-couchdb-local-url",
-    "urlBase": "your-couchdb-loca-url-without-http://-prefix",
+    "urlBase": "your-couchdb-local-url-without-http://-prefix",
     "username": "your-couchdb-username",
     "password": "your-couchdb-password"
   },
-  "useCouchDB": true
+  "useCouchDB": true,
+  "useIAM": true,
+  "backupFolder": "/HTML/backups"
 }
 ```
-The final item, useCouchDB requires either ```true``` or ```false``` as the supplied value. If useCouchDB is true then the cloudant credentials are ignored and valid credentials are required for your couchdb data base. if useCouchDB is false, then the couchdb credentials are ignored and valid credentials are required for your cloudant data base. 
+The item, useCouchDB requires either ```true``` or ```false``` as the supplied value. If useCouchDB is true then the cloudant credentials are ignored and valid credentials are required for your couchdb data base. if useCouchDB is false, then the couchdb credentials are ignored and valid credentials are required for your cloudant data base. 
+
+If you choose to use the backup and restore option, it is recommended that you provide a valid value for the ```backupFolder``` option. This will ensure that your backups are sent to the correct location. 
 
 ## This service supports the following capabilities: 
   -  **getCredsFromFile** = 'function (_file): ingests credentials from file at provided absolute path.';

@@ -1,19 +1,25 @@
 {
   "cloudant": {
+    "apikey": "your IAM api key",
+    "host": "your IAM host name",
+    "iam_apikey_description": "API Key description",
+    "iam_apikey_name": "IAM APIKey name",
+    "iam_role_crn": "IAM role",
+    "iam_serviceid_crn": "IBM Service ID",
     "username": "your-cloudant-user-name",
     "password": "your-cloudant-password",
-    "host": "cloudant-host-id",
     "port": 443,
+    "urlBase": "your-cloudant-url-without-http://-prefix",
     "url": "your-cloudant-url"
   },
   "couchdb": {
     "url": "your-couchdb-local-url",
-    "urlBase": "your-couchdb-loca-url-without-http://-prefix",
+    "urlBase": "your-couchdb-local-url-without-http://-prefix",
     "username": "your-couchdb-username",
     "password": "your-couchdb-password"
   },
   "useCouchDB": true,
-  "backups": "/HTML/backups",
-  "backupFolder": ""
+  "useIAM": true,
+  "backupFolder": "/HTML/backups"
 }
 
