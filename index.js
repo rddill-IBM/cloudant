@@ -27,11 +27,17 @@ module.exports = {
   cloudantAuth: {},
   noSQLCreds: {},
   _credentials: {},
+  IAM_create: {},
+  IAM_refresh: Date.now(),
 
   /**
-  * add code to handle IAM based authentication.
-  * use test to determine approach.
-  * if (typeof (_credentials.apikey !== 'undefined')) {then use IAM, else use existing}
+    * 1Q 2020 planned updates
+    * Required updates (focus on architectural quality of maintainability)
+    * Streamline code: reduce duplication:
+    *  - add function to replace replicated IAM test in each exported function
+    *  - add methodName string to each exported function.
+    *  - replace, where possible, replicated async functions with common function. primary difference in many routines
+    *      is the presence of the method name in the async functions, which can be resolved by the previous update.
   */
 
   /**
@@ -171,7 +177,7 @@ module.exports = {
       params.grant_type = 'urn:ibm:params:oauth:grant-type:apikey';
       params.apikey = this._credentials.apikey;
       return new Promise(function(resolve, reject) {
-        if (_rdd.cloudantAuth !== null) {
+        if ((_rdd.cloudantAuth !== null) && (Date.now() <= _rdd.IAM_refresh)) {
           resolve({success: _rdd.cloudantAuth});
         } else {
           request(
@@ -182,6 +188,8 @@ module.exports = {
               if (error) { console.log('authenticate error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
                 let rBody = JSON.parse(response.body);
                 _rdd.cloudantAuth = 'Bearer ' + rBody.access_token;
+                _rdd.IAM_create = Date.now();
+                _rdd.IAM_refresh = _rdd.IAM_create + 3000000;
                 resolve({success: _rdd.cloudantAuth});
               }
             }
@@ -205,6 +213,13 @@ module.exports = {
   */
   create: function(_name) {
     // create a new database
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.create(_name);
+        });
+    }
     let method = 'PUT';
     let url = this.getDBPath() + _name;
     let headers = {};
@@ -247,6 +262,15 @@ module.exports = {
   */
   drop: function(_name) {
     // drop a database
+    console.log('drop: this: ', this);
+
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.drop(_name);
+        });
+    }
     let method = 'DELETE';
     let url = this.getDBPath() + _name;
     let headers = {};
@@ -296,6 +320,13 @@ module.exports = {
   insert: function(_name, _object) {
     // iCloudant automatically creates a unique index for each entry.
     // let methodName = 'insert';
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.insert(_name, _object);
+        });
+    }
     delete _object._rev;
     let method = 'POST';
     let url = this.getDBPath() + _name;
@@ -336,6 +367,13 @@ module.exports = {
   deleteItem: function(_name, _oid, _rev) {
     // delete object specified by _oid in database _name /$DATABASE/$DOCUMENT_ID?rev=$REV
     //_name, _oid, _rev, cbfn
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.deleteItem(_name, _oid, _rev);
+        });
+    }
     let method = 'DELETE';
     let url = this.getDBPath() + _name + '/' + _oid + '?rev=' + _rev;
     let headers = {};
@@ -375,6 +413,13 @@ module.exports = {
   getOne: function(_name, _oid) {
     // let methodName = 'getOne';
     // select objects from database _name specified by selection criteria _selector
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.getOne(_name, _oid);
+        });
+    }
     let method = 'GET';
     let url = this.getDBPath() + _name + '/' + _oid;
     let headers = {};
@@ -417,6 +462,13 @@ module.exports = {
   */
   update: function(_name, _id, _content) {
     // insert JSON _object into database _name
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.update(_name, _id, _content);
+        });
+    }
     let methodName = 'update';
     let updateContent = _content;
     let method = 'POST';
@@ -474,6 +526,13 @@ module.exports = {
   select: function(_name, key, view) {
     // select objects from database _name specified by selection criteria _selector
     // console.log("select entered");
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.select(_name, key, view);
+        });
+    }
     let method = 'GET';
     let object = {selector: {idRubric: key}};
     // console.log("name: "+_name+" key: "+key+" view: "+view);
@@ -532,6 +591,13 @@ module.exports = {
   select2: function(_name, key, selectField) {
     // select objects from database _name specified by selection criteria _selector
     // let methodName = 'select2';
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.select2(_name, key, selectField);
+        });
+    }
     let method = 'POST';
     let object = {selector: {_id: {$gt: 0}}};
     object.selector[selectField] = {$in: key};
@@ -575,6 +641,13 @@ module.exports = {
   selectMulti: function(_name, keyArray, view) {
     // select objects from database _name specified by selection criteria _selector
     // console.log("selectMulti entered");
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.selectMulti(_name, keyArray, view);
+        });
+    }
     let keys = '';
     for (let each = 0; each < keyArray.length; each++) {
       (function(_idx, _array) {
@@ -621,6 +694,13 @@ module.exports = {
   *  - if body.error does not exist: {error: error}
   */
   getDocs: function(_name) {
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.getDocs(_name);
+        });
+    }
     let method = 'GET';
     let url = this.getDBPath() + _name + '/_all_docs?include_docs=true';
     let headers = {};
@@ -656,6 +736,13 @@ module.exports = {
   */
   listAllDatabases: function() {
     // list all databases
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.listAllDatabases();
+        });
+    }
     let method = 'GET';
     let url = this.getDBPath() + '_all_dbs';
     let headers = {};
@@ -717,6 +804,13 @@ module.exports = {
   * On Table Create Failure: {error: nodejs Error Object}
   */
   createBackup: function(_name) {
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.createBackup(_name);
+        });
+    }
     let _rdd = this;
     return new Promise(function(resolve, reject) {
       return _rdd.getDocs(_name)
@@ -761,6 +855,13 @@ module.exports = {
   * On Table Create Failure: {error: nodejs Error Object}
   */
   restoreTable: function(_name) {
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          this.restoreTable(_name);
+        });
+    }
     let fileName = path.join(this.noSQLCreds.backupFolder, _name);
     let fileObject = fs.readFileSync(fileName);
     let restoreObject;

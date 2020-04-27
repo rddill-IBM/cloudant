@@ -1,5 +1,22 @@
 /* eslint-disable no-unused-vars */
 
+/**
+  * 1Q 2020 planned updates
+  * Required updates (focus on architectural quality of maintainability)
+  * Improve test coverage:
+  *  - update tests to address both IAM and uid/pw approach
+  *  - update tests to test both cloudant and couchdb in same run
+  *  - update tests to test failure modes
+  *   - db.env.json not present
+  *   - json content invalid format
+  *   - missing uid/pw credential
+  *   - missing iam credential
+  *   - retrieve invalid key
+  *   - update invalid key/rev combo
+  *   - crud without successful authentication
+  *   - db create/delete without successful authentication
+*/
+
 'use strict';
 let assert = require('assert');
 let path = require('path');
