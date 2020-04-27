@@ -5,6 +5,7 @@ Common routines to allow SQL-like access to either CouchDB or Cloudant. Requests
  - V1.06 adds error processing for situations when the target DBM is not available. 
  - V1.07 updates test script to support change in select2 return
  - V1.08 adds support for IBM IAM authentication. This introduces additional elements to the cloudant object in the json input and also adds an additional element at the end of the sequence (useIAM) with is either true or not. Since IAM is only (currently) applicable to Cloudant, there is no attempt to support it for CouchDB. If useIAM === true, then any values for cloudant username and password are ignored. Likewise, if useIAM !=== true, then any values for the cloudant IAM section are ignored. 
+ - V1.09 adds support for IAM token expiration. Tokens expire 60 minutes after creation. This will not refresh tokens once time has passed 50 minutes after creation. Token refresh happens on the next request after the 50 minute window has passed.  
 
 ## The format of the json object is: 
 ```JSON
