@@ -29,6 +29,7 @@ module.exports = {
   _credentials: {},
   IAM_create: {},
   IAM_refresh: Date.now(),
+  authenticateTimeout: 2000,
 
   /**
     * 1Q 2020 planned updates
@@ -217,7 +218,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
-          this.create(_name);
+          setTimeout(() => { this.create(_name,); }, this.authenticateTimeout);
         });
     }
     let method = 'PUT';
@@ -268,7 +269,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
-          this.drop(_name);
+          setTimeout(() => { this.drop(_name); }, this.authenticateTimeout);
         });
     }
     let method = 'DELETE';
@@ -324,7 +325,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
-          this.insert(_name, _object);
+          setTimeout(() => { this.insert(_name, _object); }, this.authenticateTimeout);
         });
     }
     delete _object._rev;
@@ -371,7 +372,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
-          this.deleteItem(_name, _oid, _rev);
+          setTimeout(() => { this.deleteItem(_name, _oid, _rev); }, this.authenticateTimeout);
         });
     }
     let method = 'DELETE';
@@ -417,7 +418,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
-          this.getOne(_name, _oid);
+          setTimeout(() => { this.getOne(_name, _oid); }, this.authenticateTimeout);
         });
     }
     let method = 'GET';
@@ -466,7 +467,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
-          this.update(_name, _id, _content);
+          setTimeout(() => { this.update(_name, _id, _content); }, this.authenticateTimeout);
         });
     }
     let methodName = 'update';
@@ -506,7 +507,7 @@ module.exports = {
           );
         })
         .catch(error => {
-          console.log(methodName + ' error on getOne: ', error);
+          console.log(methodName + ' database: ' + _name + ' key: ' + _id + ' error on getOne: ', error);
           reject({error: error});
         });
     });
@@ -530,7 +531,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
-          this.select(_name, key, view);
+          setTimeout(() => { this.select(_name, key, view); }, this.authenticateTimeout);
         });
     }
     let method = 'GET';
@@ -595,7 +596,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
-          this.select2(_name, key, selectField);
+          setTimeout(() => { this.select2(_name, key, selectField); }, this.authenticateTimeout);
         });
     }
     let method = 'POST';
@@ -641,11 +642,12 @@ module.exports = {
   selectMulti: function(_name, keyArray, view) {
     // select objects from database _name specified by selection criteria _selector
     // console.log("selectMulti entered");
+    let methodName = 'selectMulti';
     if (this.IAM_refresh < Date.now()) {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
-          this.selectMulti(_name, keyArray, view);
+          setTimeout(() => { this.selectMulti(_name, keyArray, view); }, this.authenticateTimeout);
         });
     }
     let keys = '';
@@ -675,8 +677,8 @@ module.exports = {
           let _body;
           _body = body;
           // eslint-disable-next-line camelcase
-          _body.total_rows = _body.rows.length;
           if (error) { console.log('selectMulti error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
+            _body.total_rows = _body.rows.length;
             resolve({success: _body});
           }
         }
@@ -698,7 +700,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
-          this.getDocs(_name);
+          setTimeout(() => { this.getDocs(_name); }, this.authenticateTimeout);
         });
     }
     let method = 'GET';
@@ -740,6 +742,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
+          setTimeout(() => { this.listAllDatabases(); }, this.authenticateTimeout);
           this.listAllDatabases();
         });
     }
@@ -808,6 +811,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
+          setTimeout(() => { this.createBackup(_name); }, this.authenticateTimeout);
           this.createBackup(_name);
         });
     }
@@ -859,6 +863,7 @@ module.exports = {
       return this.authenticate()
         .then(_dbAuth => {
           console.log('Successfully refreshed token with data store. ');
+          setTimeout(() => { this.restoreTable(_name); }, this.authenticateTimeout);
           this.restoreTable(_name);
         });
     }
