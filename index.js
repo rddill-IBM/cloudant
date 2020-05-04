@@ -660,7 +660,7 @@ module.exports = {
     // console.log("keys is ", keys);
     let method = 'GET';
     let object = {keys: keyArray};
-    let keySelect = '/_design/views/_view/' + view + '?key=' + keys;
+    let keySelect = '/_design/views/_view/' + view + '?keys=' + keys;
     let url = this.getDBPath() + _name + keySelect;
     let headers = {};
     if (this._credentials.useIAM !== null) {
