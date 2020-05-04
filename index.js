@@ -306,6 +306,54 @@ module.exports = {
   },
 
   /**
+  * index-based retrieval
+  * @param {String} _name name of table to use
+  * @param {JSON} selector object to use for find
+  * @returns {JSON} details follow:
+  * on Success, returns JSON object with body object from operation:
+  *  - {success: { ok: true,
+  *      id: (text string with oid of inserted document),
+  *      rev: (text string with rev of inserted document) }}
+  * on insert Failure, returns JSON object:
+  *  - {errorMessage: text string}
+  *  - {error: Error object}
+  */
+  find: function(_name, _object) {
+  // iCloudant automatically creates a unique index for each entry.
+  // let methodName = 'insert';
+    if (this.IAM_refresh < Date.now()) {
+      return this.authenticate()
+        .then(_dbAuth => {
+          console.log('Successfully refreshed token with data store. ');
+          setTimeout(() => { this.find(_name, _object); }, this.authenticateTimeout);
+        });
+    }
+    let method = 'POST';
+    let url = this.getDBPath() + _name + '/_find';
+    delete _object._rev;
+    let headers = {};
+    if (this._credentials.useIAM !== null) {
+      headers.Authorization = this.cloudantAuth;
+    } else {
+      headers['set-cookie'] = this.cloudantAuth;
+    }
+    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
+    return new Promise(function(resolve, reject) {
+      request({
+        url: url,
+        headers: headers,
+        method: method,
+        json: _object
+      }, function(error, response, body) {
+        if (error) { console.log('insert error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (body.error) !== 'undefined') && (body.error !== null))) { console.log('_body.error: ', body.error); reject({error: body.error + ' ' + body.reason}); } else {
+          resolve({success: body});
+        }
+      });
+    });
+  },
+
+  /**
   * adds (inserts in SQL terminology) a single record into the targeted table
   * @param {String} _name name of table to use
   * @param {JSON} _object object (record) to add
@@ -402,7 +450,7 @@ module.exports = {
   },
 
   /**
-  * retrives a single record from the database using the couchdb or cloudant key field
+  * retrieves a single record from the database using the couchdb or cloudant key field
   * @param {String} _name name of table to use
   * @param {String} _oid key value to use
   * @returns {JSON} details follow:
@@ -779,6 +827,7 @@ module.exports = {
     _c.authenticate = 'function (): uses credentials in env.json file to authenticate to couchdb or cloudant server';
     _c.create = 'function (_name): create a new database';
     _c.drop = 'function (_name): drop a database';
+    _c.find = 'function (_name, _object): find records based on provided selector object';
     _c.insert = 'function (_name, _object): insert JSON _object into database _name';
     _c.update = 'function (_name, _oid, _object): update JSON object specified by object _oid in database _name with new object _object';
     _c.select = 'function (_name, _selector): select objects from database _name specified by selection criteria _selector';

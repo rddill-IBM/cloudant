@@ -8,6 +8,7 @@ Common routines to allow SQL-like access to either CouchDB or Cloudant. Requests
  - V1.09 adds support for IAM token expiration. Tokens expire 60 minutes after creation. This will not refresh tokens once time has passed 50 minutes after creation. Token refresh happens on the next request after the 50 minute window has passed.  
  - V1.0.10 changes the IAM refresh approach. While refresh was working in 1.0.9, the command requested (insert, update, etc.) failed. This inserts an adjustable wait time to let the system settle after refreshing the IAM token before redoing the original request. The default wait time is 2 seconds and is managed in an accessible field called **authenticateTimeout** This expects a value based on milliseconds, making the default value **2000**
  - V1.0.11 Update to selectMulti. Incorrectly passing key value, resolved. 
+ - V1.0.12 Add support for _find
 
 ## The format of the json object is: 
 ```JSON
