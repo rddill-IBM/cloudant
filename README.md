@@ -9,6 +9,7 @@ Common routines to allow SQL-like access to either CouchDB or Cloudant. Requests
  - V1.0.10 changes the IAM refresh approach. While refresh was working in 1.0.9, the command requested (insert, update, etc.) failed. This inserts an adjustable wait time to let the system settle after refreshing the IAM token before redoing the original request. The default wait time is 2 seconds and is managed in an accessible field called **authenticateTimeout** This expects a value based on milliseconds, making the default value **2000**
  - V1.0.11 Update to selectMulti. Incorrectly passing key value, resolved. 
  - V1.0.12 Add support for _find
+ - V1.1.0 Update IAM support to auto refresh after 3500 seconds. This is handled in the authenticate routine iff IAM is selected. If user/password selected, there is no need for token refresh and this is not invoked. 
 
 ## The format of the json object is: 
 ```JSON

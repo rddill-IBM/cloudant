@@ -27,9 +27,6 @@ module.exports = {
   cloudantAuth: {},
   noSQLCreds: {},
   _credentials: {},
-  IAM_create: {},
-  IAM_refresh: Date.now(),
-  authenticateTimeout: 2000,
 
   /**
     * 1Q 2020 planned updates
@@ -137,6 +134,7 @@ module.exports = {
   */
   authenticate: function() {
     let _rdd = this;
+    console.log('\n=====> db authenticate entered at: ' + this.getTimeStamp());
     if ((this._credentials === null) || (typeof this._credentials === 'undefined')) {
       return {error: new Error('Authentication failed. No credentials provided.')};
     }
@@ -178,7 +176,7 @@ module.exports = {
       params.grant_type = 'urn:ibm:params:oauth:grant-type:apikey';
       params.apikey = this._credentials.apikey;
       return new Promise(function(resolve, reject) {
-        if ((_rdd.cloudantAuth !== null) && (Date.now() <= _rdd.IAM_refresh)) {
+        if (_rdd.cloudantAuth !== null) {
           resolve({success: _rdd.cloudantAuth});
         } else {
           request(
@@ -189,8 +187,13 @@ module.exports = {
               if (error) { console.log('authenticate error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
                 let rBody = JSON.parse(response.body);
                 _rdd.cloudantAuth = 'Bearer ' + rBody.access_token;
-                _rdd.IAM_create = Date.now();
-                _rdd.IAM_refresh = _rdd.IAM_create + 3000000;
+                console.log('=====> auth: ' + _rdd.cloudantAuth);
+                // the IAM token is only valid for one hour. 
+                // refresh the token in just under an hour (3500 seconds)
+                setTimeout((function() {
+                  console.log('\n=====>initiating token refresh at: ' + _rdd.getTimeStamp());
+                  _rdd.cloudantAuth = null; 
+                  _rdd.authenticate(); }), 3500000);
                 resolve({success: _rdd.cloudantAuth});
               }
             }
@@ -214,13 +217,6 @@ module.exports = {
   */
   create: function(_name) {
     // create a new database
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.create(_name,); }, this.authenticateTimeout);
-        });
-    }
     let method = 'PUT';
     let url = this.getDBPath() + _name;
     let headers = {};
@@ -264,14 +260,6 @@ module.exports = {
   drop: function(_name) {
     // drop a database
     console.log('drop: this: ', this);
-
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.drop(_name); }, this.authenticateTimeout);
-        });
-    }
     let method = 'DELETE';
     let url = this.getDBPath() + _name;
     let headers = {};
@@ -321,13 +309,6 @@ module.exports = {
   find: function(_name, _object) {
   // iCloudant automatically creates a unique index for each entry.
   // let methodName = 'insert';
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.find(_name, _object); }, this.authenticateTimeout);
-        });
-    }
     let method = 'POST';
     let url = this.getDBPath() + _name + '/_find';
     delete _object._rev;
@@ -369,13 +350,6 @@ module.exports = {
   insert: function(_name, _object) {
     // iCloudant automatically creates a unique index for each entry.
     // let methodName = 'insert';
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.insert(_name, _object); }, this.authenticateTimeout);
-        });
-    }
     delete _object._rev;
     let method = 'POST';
     let url = this.getDBPath() + _name;
@@ -416,13 +390,6 @@ module.exports = {
   deleteItem: function(_name, _oid, _rev) {
     // delete object specified by _oid in database _name /$DATABASE/$DOCUMENT_ID?rev=$REV
     //_name, _oid, _rev, cbfn
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.deleteItem(_name, _oid, _rev); }, this.authenticateTimeout);
-        });
-    }
     let method = 'DELETE';
     let url = this.getDBPath() + _name + '/' + _oid + '?rev=' + _rev;
     let headers = {};
@@ -462,13 +429,6 @@ module.exports = {
   getOne: function(_name, _oid) {
     // let methodName = 'getOne';
     // select objects from database _name specified by selection criteria _selector
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.getOne(_name, _oid); }, this.authenticateTimeout);
-        });
-    }
     let method = 'GET';
     let url = this.getDBPath() + _name + '/' + _oid;
     let headers = {};
@@ -511,13 +471,6 @@ module.exports = {
   */
   update: function(_name, _id, _content) {
     // insert JSON _object into database _name
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.update(_name, _id, _content); }, this.authenticateTimeout);
-        });
-    }
     let methodName = 'update';
     let updateContent = _content;
     let method = 'POST';
@@ -575,13 +528,6 @@ module.exports = {
   select: function(_name, key, view) {
     // select objects from database _name specified by selection criteria _selector
     // console.log("select entered");
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.select(_name, key, view); }, this.authenticateTimeout);
-        });
-    }
     let method = 'GET';
     let object = {selector: {idRubric: key}};
     // console.log("name: "+_name+" key: "+key+" view: "+view);
@@ -640,13 +586,6 @@ module.exports = {
   select2: function(_name, key, selectField) {
     // select objects from database _name specified by selection criteria _selector
     // let methodName = 'select2';
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.select2(_name, key, selectField); }, this.authenticateTimeout);
-        });
-    }
     let method = 'POST';
     let object = {selector: {_id: {$gt: 0}}};
     object.selector[selectField] = {$in: key};
@@ -691,13 +630,6 @@ module.exports = {
     // select objects from database _name specified by selection criteria _selector
     // console.log("selectMulti entered");
     let methodName = 'selectMulti';
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.selectMulti(_name, keyArray, view); }, this.authenticateTimeout);
-        });
-    }
     let keys = '';
     for (let each = 0; each < keyArray.length; each++) {
       (function(_idx, _array) {
@@ -744,13 +676,6 @@ module.exports = {
   *  - if body.error does not exist: {error: error}
   */
   getDocs: function(_name) {
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.getDocs(_name); }, this.authenticateTimeout);
-        });
-    }
     let method = 'GET';
     let url = this.getDBPath() + _name + '/_all_docs?include_docs=true';
     let headers = {};
@@ -786,14 +711,6 @@ module.exports = {
   */
   listAllDatabases: function() {
     // list all databases
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.listAllDatabases(); }, this.authenticateTimeout);
-          this.listAllDatabases();
-        });
-    }
     let method = 'GET';
     let url = this.getDBPath() + '_all_dbs';
     let headers = {};
@@ -856,14 +773,6 @@ module.exports = {
   * On Table Create Failure: {error: nodejs Error Object}
   */
   createBackup: function(_name) {
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.createBackup(_name); }, this.authenticateTimeout);
-          this.createBackup(_name);
-        });
-    }
     let _rdd = this;
     return new Promise(function(resolve, reject) {
       return _rdd.getDocs(_name)
@@ -908,14 +817,6 @@ module.exports = {
   * On Table Create Failure: {error: nodejs Error Object}
   */
   restoreTable: function(_name) {
-    if (this.IAM_refresh < Date.now()) {
-      return this.authenticate()
-        .then(_dbAuth => {
-          console.log('Successfully refreshed token with data store. ');
-          setTimeout(() => { this.restoreTable(_name); }, this.authenticateTimeout);
-          this.restoreTable(_name);
-        });
-    }
     let fileName = path.join(this.noSQLCreds.backupFolder, _name);
     let fileObject = fs.readFileSync(fileName);
     let restoreObject;
