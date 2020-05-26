@@ -192,8 +192,9 @@ module.exports = {
                 // refresh the token in just under an hour (3500 seconds)
                 setTimeout((function() {
                   console.log('\n=====>initiating token refresh at: ' + _rdd.getTimeStamp());
-                  _rdd.cloudantAuth = null; 
-                  _rdd.authenticate(); }), 3500000);
+                  _rdd.cloudantAuth = null;
+                  _rdd.authenticate();
+                }), 3500000);
                 resolve({success: _rdd.cloudantAuth});
               }
             }
@@ -787,13 +788,13 @@ module.exports = {
           let records = 0; let views = 0;
           for (let each = 0; each < rows.length; each++) {
             (function(_idx, _array) {
-              if (_array[_idx].doc._id !== '_design/views') {
+              if (_array[_idx].doc._id.substring(0, 7) !== '_design') {
                 if (_str !== '[') { _str = _str + ', '; }
                 _str = _str + JSON.stringify(_array[_idx].doc);
                 records++;
               } else {
                 views++;
-                if (viewNum > 0) { _views = _views + ', '; } _views = _views + ('{ "_id": "_design/views", "views":' + JSON.stringify(_array[_idx].doc.views) + '}');
+                if (viewNum > 0) { _views = _views + ', '; } _views = _views + JSON.stringify(_array[_idx].doc);
               }
             })(each, rows);
           }
