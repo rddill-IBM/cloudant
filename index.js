@@ -836,11 +836,7 @@ module.exports = {
               // insert all the rows
               for (let each = 0; each < restoreObject.rows.length; each++) {
                 (function(_idx, _arr) {
-                  let _object = {}; _object.content = _arr[_idx];
-                  _object._id = _object.content._id;
-                  _object._rev = _object.content._rev;
-                  delete _object.content._id;
-                  delete _object.content._rev;
+                  let _object = {}; _object = _arr[_idx];
                   return _rdd.insert(_table, _object)
                     .then(_res => { records.push({success: {id: _object._id, success: _res}}); })
                     .catch(_err => { records.push({error: {id: _object.id, error: _err}}); });
@@ -849,11 +845,7 @@ module.exports = {
               // insert all the views
               for (let each = 0; each < restoreObject.views.length; each++) {
                 (function(_idx, _arr) {
-                  let _object = {}; _object.content = _arr[_idx];
-                  _object._id = _object.content._id;
-                  _object._rev = _object.content._rev;
-                  delete _object.content._id;
-                  delete _object.content._rev;
+                  let _object = {}; _object = _arr[_idx];
                   return _rdd.insert(_table, _object)
                     .then(_res => { views.push({success: {id: _object._id, success: _res}}); })
                     .catch(_err => { views.push({error: {id: _object.id, error: _err}}); });
