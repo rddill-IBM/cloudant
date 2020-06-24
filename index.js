@@ -793,8 +793,8 @@ module.exports = {
                 _str = _str + JSON.stringify(_array[_idx].doc);
                 records++;
               } else {
-                views++;
                 if (viewNum > 0) { _views = _views + ', '; } _views = _views + JSON.stringify(_array[_idx].doc);
+                viewNum++;
               }
             })(each, rows);
           }

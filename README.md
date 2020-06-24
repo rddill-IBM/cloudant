@@ -12,6 +12,7 @@ Common routines to allow SQL-like access to either CouchDB or Cloudant. Requests
  - V1.1.0 Update IAM support to auto refresh after 3500 seconds. This is handled in the authenticate routine iff IAM is selected. If user/password selected, there is no need for token refresh and this is not invoked. 
  - V1.1.1 Update createBackup service to also capture defined indices
  - V1.1.4 update Restore table to work with new backup service. 
+ - V1.1.5 fix bug in Backup when saving multiple indices. 
 
 ## The format of the json object is: 
 ```JSON
