@@ -27,6 +27,7 @@ module.exports = {
   cloudantAuth: {},
   noSQLCreds: {},
   _credentials: {},
+  _queryLimit: 1000,
 
   /**
     * 1Q 2020 planned updates
@@ -188,7 +189,7 @@ module.exports = {
                 let rBody = JSON.parse(response.body);
                 _rdd.cloudantAuth = 'Bearer ' + rBody.access_token;
                 console.log('=====> auth: ' + _rdd.cloudantAuth);
-                // the IAM token is only valid for one hour. 
+                // the IAM token is only valid for one hour.
                 // refresh the token in just under an hour (3500 seconds)
                 setTimeout((function() {
                   console.log('\n=====>initiating token refresh at: ' + _rdd.getTimeStamp());
@@ -630,7 +631,7 @@ module.exports = {
   selectMulti: function(_name, keyArray, view) {
     // select objects from database _name specified by selection criteria _selector
     // console.log("selectMulti entered");
-    let methodName = 'selectMulti';
+    // let methodName = 'selectMulti';
     let keys = '';
     for (let each = 0; each < keyArray.length; each++) {
       (function(_idx, _array) {
@@ -677,28 +678,85 @@ module.exports = {
   *  - if body.error does not exist: {error: error}
   */
   getDocs: function(_name) {
-    let method = 'GET';
-    let url = this.getDBPath() + _name + '/_all_docs?include_docs=true';
-    let headers = {};
-    if (this._credentials.useIAM !== null) {
-      headers.Authorization = this.cloudantAuth;
-    } else {
-      headers['set-cookie'] = this.cloudantAuth;
-    }
-    //headers = (this._credentials.useIAM) ? {Authorization: this.cloudantAuth} : {'set-cookie': this.cloudantAuth, Accept: '/'};
-    headers['content-type'] = 'application/json';
+    let rtnObj = {};
+    rtnObj.rows = [];
+    let _rdd = this;
     return new Promise(function(resolve, reject) {
+      return _rdd._helperGetDocs(_name, '', rtnObj, null, null)
+        .then(_db => {
+          console.log(_db);
+          resolve(_db);
+        })
+        .catch(_err => {
+          console.log(_err);
+          reject(_err);
+        });
+    });
+  },
+
+  _helperGetDocs(db, startKey, _rtnObj, _resolve, _reject) {
+    let methodName = '_helperGetDocs';
+    let method = 'GET';
+    let _rdd = this;
+    let url = _rdd.getDBPath() + db + '/_all_docs?include_docs=true&limit=' + _rdd._queryLimit + '&startkey="' + startKey + '"';
+    console.log(methodName + ' url: ' + url);
+    let headers = {};
+    if (_rdd._credentials.useIAM !== null) {
+      headers.Authorization = _rdd.cloudantAuth;
+    } else {
+      headers['set-cookie'] = _rdd.cloudantAuth;
+    }
+    //headers = (_rdd._credentials.useIAM) ? {Authorization: _rdd.cloudantAuth} : {'set-cookie': _rdd.cloudantAuth, Accept: '/'};
+    headers['content-type'] = 'application/json';
+    if (_reject === null) {
+      return new Promise(function(resolve, reject) {
+        request(
+          {url: url, headers: headers, method: method},
+          function(error, response, body) {
+            let _body;
+            try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
+            if (error) {
+              console.log('getDocs error: ', error);
+              reject({error: error});
+            } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
+              console.log('_body.error: ', _body.error);
+              reject({error: _body.error + ' ' + _body.reason});
+            } else if (_body.rows.length === _rdd._queryLimit) { // then we still have more rows to gather
+              for (let i = 0; i < (_rdd._queryLimit - 1); i++) { (function(_idx, _arr) { if (typeof _arr[_idx] === 'object') { _rtnObj.rows.push(_arr[_idx]); } })(i, _body.rows); }
+              // let nextKey = _body.rows[_rdd._queryLimit - 1].id + '%00';
+              let nextKey = _body.rows[_rdd._queryLimit - 1].id;
+              _rdd._helperGetDocs(db, nextKey, _rtnObj, resolve, reject);
+            } else {
+              for (let each in _body.rows) { (function(_idx, _arr) { if (typeof _arr[_idx] === 'object') { _rtnObj.rows.push(_arr[_idx]); } })(each, _body.rows); }
+              resolve({success: _rtnObj});
+            }
+          }
+        );
+      });
+    } else {
       request(
         {url: url, headers: headers, method: method},
         function(error, response, body) {
           let _body;
-          try { _body = JSON.parse(body); } catch (jError) { reject({error: jError}); }
-          if (error) { console.log('getDocs error: ', error); reject({error: error}); } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) { console.log('_body.error: ', _body.error); reject({error: _body.error + ' ' + _body.reason}); } else {
-            resolve({success: _body});
+          try { _body = JSON.parse(body); } catch (jError) { _reject({error: jError}); }
+          if (error) {
+            console.log('getDocs error: ', error);
+            _reject({error: error});
+          } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
+            console.log('_body.error: ', _body.error);
+            _reject({error: _body.error + ' ' + _body.reason});
+          } else if (_body.rows.length === _rdd._queryLimit) { // then we still have more rows to gather
+            for (let i = 0; i < (_rdd._queryLimit - 1); i++) { (function(_idx, _arr) { if (typeof _arr[_idx] === 'object') { _rtnObj.rows.push(_arr[_idx]); } })(i, _body.rows); }
+            // let nextKey = _body.rows[_rdd._queryLimit - 1].id + '%00';
+            let nextKey = _body.rows[_rdd._queryLimit - 1].id;
+            _rdd._helperGetDocs(db, nextKey, _rtnObj, _resolve, _reject);
+          } else {
+            for (let each in _body.rows) { (function(_idx, _arr) { if (typeof _arr[_idx] === 'object') { _rtnObj.rows.push(_arr[_idx]); } })(each, _body.rows); }
+            _resolve({success: _rtnObj});
           }
         }
       );
-    });
+    }
   },
 
   /**
@@ -778,6 +836,7 @@ module.exports = {
     return new Promise(function(resolve, reject) {
       return _rdd.getDocs(_name)
         .then(_body => {
+          console.log('createBackup: _body: ', _body);
           let name = 'Backup_';
           name = name + ((_name === '') ? 'allFiles' : _name);
           name = name + '_' + _rdd.getTimeStamp() + '.json';

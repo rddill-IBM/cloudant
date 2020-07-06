@@ -13,6 +13,7 @@ Common routines to allow SQL-like access to either CouchDB or Cloudant. Requests
  - V1.1.1 Update createBackup service to also capture defined indices
  - V1.1.4 update Restore table to work with new backup service. 
  - V1.1.5 fix bug in Backup when saving multiple indices. 
+ - V1.1.6 fix bug in Backup when saving large files. 
 
 ## The format of the json object is: 
 ```JSON
