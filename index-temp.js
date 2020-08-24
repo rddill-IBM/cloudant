@@ -452,7 +452,8 @@ module.exports = {
     request({
       url: url,
       headers: headers,
-      method: method
+      method: method,
+      json: {}
     }, function(error, response, body) {
       if (error) {
         console.log('insert error: ', error);
@@ -738,7 +739,9 @@ module.exports = {
     rtnObj.rows = [];
     let _rdd = this;
     return new Promise(function(resolve, reject) {
-      return _rdd._helperGetDocs(_name, '', rtnObj, null, null)
+      let url = _rdd.getDBPath() + _name + '/_all_docs?include_docs=true&limit={0}&startkey="{1}"';
+      _rdd._helperProcessRequest(methodName, url, {url: [_rdd._queryLimit, '']}, 'GET', rtnObj, resolve, reject);
+      /*
         .then(_db => {
           console.log(methodName + ' succeeded with ' + _db.success.rows.length + ' rows');
           resolve(_db);
@@ -747,7 +750,72 @@ module.exports = {
           console.log(methodName + ' failed with ', _err);
           reject(_err);
         });
+      */
     });
+  },
+
+  /**
+   * manage request for errors, for rate limit errors, for record limit errors
+   * @param {*} _requestor name of requesting db function
+   * @param {*} _url url to process
+   * @param {*} _object any supporting data required to pass to url
+   * @param {*} _method http method (GET, POST, DELETE)
+   * ...
+   * the next three probably don't need to be passed to this service, which needs to be refactored into two functions.
+   * ...
+   * @param {*} _rtnObj object to hold db results
+   * @param {*} _resolve Promise resolve
+   * @param {*} _reject Promise reject
+   */
+  _helperProcessRequest(_requestor, _url, _object, _method, _resolve, _reject) {
+    let methodName = '_helperProcessRequest for ' + _requestor;
+    let method = _method;
+    let _rdd = this;
+    let object = _object;
+    let urlOptions = ((typeof object.url !== 'undefined') && (object.url !== null)) ? object.url.stringify : [];
+    let url = _url.format(urlOptions);
+    console.log(methodName + ' url: ' + url);
+    delete object.url;
+    let headers = {};
+    if (_rdd._credentials.useIAM !== null) {
+      headers.Authorization = _rdd.cloudantAuth;
+    } else {
+      headers['set-cookie'] = _rdd.cloudantAuth;
+    }
+    headers['content-type'] = 'application/json';
+    request(
+      {url: url, headers: headers, method: method},
+      function(error, response, body) {
+        let _body;
+        try { _body = JSON.parse(body); } catch (jError) { _reject({error: jError}); }
+        if (error) {
+          console.log(methodName + ' error: ', error);
+          _reject({error: error});
+        } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
+          if (_body.error === 'too_many_requests') {
+            console.log(methodName + ' too many errors, _body: ', _body);
+            setTimeout(function() {
+              object.url = [urlOptions.split()];
+              _rdd._helperProcessRequest(methodName, url, object, 'GET', _rtnObj, _resolve, _reject);
+              // _rdd._helperGetDocs(db, startKey, _rtnObj, resolve, reject);
+            }, _rdd._rateTimeOut);
+          } else {
+            _reject({error: _body.error + ' ' + _body.reason});
+          }
+        } else if (_body.rows.length === _rdd._queryLimit) { // then we still have more rows to gather
+          for (let i = 0; i < (_rdd._queryLimit - 1); i++) { (function(_idx, _arr) { if (typeof _arr[_idx] === 'object') { _rtnObj.rows.push(_arr[_idx]); } })(i, _body.rows); }
+          // let nextKey = _body.rows[_rdd._queryLimit - 1].id + '%00';
+          let nextKey = _body.rows[_rdd._queryLimit - 1].id;
+          object.url = [urlOptions.split()];
+          object.url[1] = (methodName === 'getDocs') ? nextKey : object.url[1];
+          _rdd._helperProcessRequest(methodName, url, object, 'GET', _rtnObj, _resolve, _reject);
+          // _rdd._helperGetDocs(db, nextKey, _rtnObj, _resolve, _reject);
+        } else {
+          for (let each in _body.rows) { (function(_idx, _arr) { if (typeof _arr[_idx] === 'object') { _rtnObj.rows.push(_arr[_idx]); } })(each, _body.rows); }
+          _resolve({success: _rtnObj});
+        }
+      }
+    );
   },
 
   _helperGetDocs(db, startKey, _rtnObj, _resolve, _reject) {
@@ -776,7 +844,6 @@ module.exports = {
               reject({error: error});
             } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
               if (_body.error === 'too_many_requests') {
-                console.log(methodName + ' initiating rate limit, too many requests.');
                 setTimeout(function() {
                   _rdd._helperGetDocs(db, startKey, _rtnObj, resolve, reject);
                 }, _rdd._rateTimeOut);
@@ -785,13 +852,11 @@ module.exports = {
               }
             } else if (_body.rows.length === _rdd._queryLimit) { // then we still have more rows to gather
               for (let i = 0; i < (_rdd._queryLimit - 1); i++) { (function(_idx, _arr) { if (typeof _arr[_idx] === 'object') { _rtnObj.rows.push(_arr[_idx]); } })(i, _body.rows); }
-              console.log(methodName + 'have now retrieved ' + _rtnObj.rows.length + 'rows. initiating next request for ' + _rdd._queryLimit + ' rows.');
               // let nextKey = _body.rows[_rdd._queryLimit - 1].id + '%00';
               let nextKey = _body.rows[_rdd._queryLimit - 1].id;
-              _rdd._helperGetDocs(db, nextKey, _rtnObj, resolve, reject);
+              _rdd._helperGetDocs(db, nextKey, _rtnObj, _resolve, _reject);
             } else {
               for (let each in _body.rows) { (function(_idx, _arr) { if (typeof _arr[_idx] === 'object') { _rtnObj.rows.push(_arr[_idx]); } })(each, _body.rows); }
-              console.log(methodName + 'have now retrieved everything: ' + _rtnObj.rows.length + ' rows.');
               resolve({success: _rtnObj});
             }
           }
@@ -807,7 +872,6 @@ module.exports = {
             _reject({error: error});
           } else if ((typeof body !== 'undefined') && ((typeof (_body.error) !== 'undefined') && (_body.error !== null))) {
             if (_body.error === 'too_many_requests') {
-              console.log(methodName + ' initiating rate limit, too many requests.');
               setTimeout(function() {
                 _rdd._helperGetDocs(db, startKey, _rtnObj, _resolve, _reject);
               }, _rdd._rateTimeOut);
@@ -817,11 +881,9 @@ module.exports = {
           } else if (_body.rows.length === _rdd._queryLimit) { // then we still have more rows to gather
             for (let i = 0; i < (_rdd._queryLimit - 1); i++) { (function(_idx, _arr) { if (typeof _arr[_idx] === 'object') { _rtnObj.rows.push(_arr[_idx]); } })(i, _body.rows); }
             let nextKey = _body.rows[_rdd._queryLimit - 1].id;
-            console.log(methodName + 'have now retrieved ' + _rtnObj.rows.length + 'rows. initiating next request for ' + _rdd._queryLimit + ' rows.');
             _rdd._helperGetDocs(db, nextKey, _rtnObj, _resolve, _reject);
           } else {
             for (let each in _body.rows) { (function(_idx, _arr) { if (typeof _arr[_idx] === 'object') { _rtnObj.rows.push(_arr[_idx]); } })(each, _body.rows); }
-            console.log(methodName + 'have now retrieved everything: ' + _rtnObj.rows.length + ' rows.');
             _resolve({success: _rtnObj});
           }
         }
