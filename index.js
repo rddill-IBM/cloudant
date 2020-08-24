@@ -836,7 +836,7 @@ module.exports = {
     return new Promise(function(resolve, reject) {
       return _rdd.getDocs(_name)
         .then(_body => {
-          console.log('createBackup: _body: ', _body);
+          // console.log('createBackup: _body: ', _body);
           let name = 'Backup_';
           name = name + ((_name === '') ? 'allFiles' : _name);
           name = name + '_' + _rdd.getTimeStamp() + '.json';
