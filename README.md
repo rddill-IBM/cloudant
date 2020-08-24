@@ -14,6 +14,8 @@ Common routines to allow SQL-like access to either CouchDB or Cloudant. Requests
  - V1.1.4 update Restore table to work with new backup service. 
  - V1.1.5 fix bug in Backup when saving multiple indices. 
  - V1.1.6 fix bug in Backup when saving large files. 
+ - V1.1.7 fix bug in Backup when saving large files, failing to resolve on final retrieve. 
+ - V1.1.8 remove console.log from backup routine.
 
 ## The format of the json object is: 
 ```JSON
