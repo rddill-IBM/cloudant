@@ -18,6 +18,7 @@ Common routines to allow SQL-like access to either CouchDB or Cloudant. Requests
  - V1.1.8 remove console.log from backup routine.
  - V1.1.9 upgrade to nodejs v12.
  - V1.1.10 fix bug in restoreTable service
+ - V1.1.11 update to node16
 
 ## The format of the json object is: 
 ```JSON
